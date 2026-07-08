@@ -116,6 +116,7 @@ const DRAINING_WORDS = ["tired", "anxious", "tense", "stuck", "delay", "resistan
 
 const $ = (selector) => document.querySelector(selector);
 let db = null;
+let currentLanguage = preferredLanguage();
 let state = createEmptyState();
 let currentDate = todayKey();
 let lastToday = currentDate;
@@ -127,7 +128,6 @@ let lensRange = 7;
 let toastTimer = null;
 let saveTimer = null;
 let recognition = null;
-let currentLanguage = preferredLanguage();
 let recognizing = false;
 
 function createEmptyState() {
@@ -909,7 +909,6 @@ async function init() {
   bindEvents();
   renderAll();
   await persistState();
-  offerUnlock();
   registerServiceWorker();
   setInterval(checkDateRoll, 60000);
 }
