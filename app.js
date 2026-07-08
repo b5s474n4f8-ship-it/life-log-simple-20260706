@@ -1,0 +1,916 @@
+const DB_NAME = "vitality-journal-db";
+const DB_STORE = "state";
+const DB_KEY = "app";
+const FALLBACK_KEY = "vitality-journal-fallback";
+const LEGACY_DB_NAME = "life-log-v5";
+const HISTORY_URL = "./history-v1.enc.json";
+const HISTORY_ID = "encrypted-history-v1";
+const HISTORY_AAD = new TextEncoder().encode("life-log-history-v1");
+const SYNC_API_BASE = "./api/sync";
+const SYNC_ITERATIONS = 250000;
+
+const LANGUAGE_KEY = "vitality-journal-language";
+const I18N = {
+  en: {
+    back_today: "Back to today", main_workspace: "Main workspace", utilities: "Utilities", language: "Language",
+    tab_observe: "Observe", tab_orient: "Orient", tab_lens: "Lens", tab_corpus: "Corpus", keep: "Keep",
+    observe_title: "Record what wants to be seen", today: "Today", trace_label: "Add a LifeLog trace",
+    trace_placeholder: "One sentence, one scene, one body signal, one thought. Leave it here first.", optional_tags: "Optional tags",
+    save_trace: "Save trace", voice: "Voice", stop: "Stop", clear: "Clear", today_section: "Today", neutral_extraction: "Neutral extraction",
+    refresh: "Refresh", protocol_note: "The app observes and organizes. It does not diagnose, rate, or label you.",
+    orient_title: "Turn today into an action line", new: "New", priming_label: "Morning or pre-task priming",
+    priming_placeholder: "Say the thoughts, plans, and possible resistance in your head.", generate_action_line: "Generate action line",
+    save: "Save", recent_signals: "Recent signals", action_line: "Action line", not_generated: "Not generated", generated: "Generated",
+    evening_check_label: "Two-minute evening check", outcome_placeholder: "What actually happened today? Did the action line help?", save_check: "Save check",
+    lens_title: "Patterns over time", time_range: "Time range", range_7: "7 days", range_30: "30 days", possible_observations: "Possible observations",
+    recording_rhythm: "Recording rhythm", by_date: "by date", corpus_title: "Personal corpus", copy_corpus: "Copy corpus", search_corpus: "Search corpus",
+    corpus_placeholder: "Search original words, questions, body signals, contexts", backup_sync_title: "Backup and sync", close: "Close",
+    dialog_copy: "Your journal stays on this device by default. Cloud sync stores only encrypted data.", export_markdown: "Export Markdown", backup_json: "Backup JSON", restore_json: "Restore JSON",
+    restore_old_history: "Restore old history", history_help_title: "Old history code", history_help_copy: "Use the old unlock code only for the bundled history package. It is different from cloud Sync ID and Sync passphrase.",
+    encrypted_sync: "Encrypted sync", sync_id: "Sync ID", sync_id_placeholder: "for example lily-vitality", sync_passphrase: "Sync passphrase", sync_passphrase_placeholder: "Used only on this device",
+    save_settings: "Save settings", sync_now: "Sync now", pull: "Pull", push: "Push", sync_help: "Use the same Sync ID and passphrase on iPhone and computer.",
+    unlock_copy: "Enter the old unlock code to restore the bundled encrypted history on this device.", unlock_code: "Unlock code", later: "Later", unlock: "Unlock", unlocking: "Unlocking",
+    date_today: "Today", date_history: "History", trace_count: "{count} trace{plural}", empty_traces: "No traces yet. One sentence is enough.", legacy: "Legacy", lifelog: "LifeLog",
+    extract_placeholder: "Observed signals appear here.", old_history_restored: "Old history restored: {days} days merged.", unlock_wrong: "Unlock code is not correct. Use the old history code, not the cloud sync passphrase.", unlock_hint: "Tip: this code is separate from Sync ID and Sync passphrase.", old_history_already: "Old history is already merged. You can restore again if you want to re-check it.", processing_device: "Processing on this device.", secure_unlock_unsupported: "Secure unlock is not supported in this browser.", history_load_failed: "History package could not be loaded.", unlock_failed: "Unlock failed.", saved_locally: "Saved locally: {dates} days, {traces} traces, {primings} primings.", local_only: "Local only", last_sync: "Last sync {time}", enter_sync_id: "Enter a Sync ID.", passphrase_rule: "Use a sync passphrase with at least 10 characters.", voice_unsupported: "Voice capture is not supported here. Use iPhone dictation in the keyboard."
+  },
+  zh: {
+    back_today: "回到今天", main_workspace: "主工作区", utilities: "工具", language: "语言",
+    tab_observe: "看见", tab_orient: "定向", tab_lens: "趋势", tab_corpus: "语料", keep: "保存",
+    observe_title: "记录此刻想被看见的东西", today: "今天", trace_label: "添加一条生命力记录",
+    trace_placeholder: "一句话、一个场景、一个身体信号、一个念头。先放在这里就好。", optional_tags: "可选标签",
+    save_trace: "保存记录", voice: "语音", stop: "停止", clear: "清空", today_section: "今天", neutral_extraction: "中性抽取",
+    refresh: "刷新", protocol_note: "App 只观察和整理，不诊断、不打分、不贴标签。",
+    orient_title: "把今天转成一条行动线", new: "新建", priming_label: "早晨或任务前 Priming",
+    priming_placeholder: "把脑中的想法、计划和可能的阻力说出来或写下来。", generate_action_line: "生成行动线",
+    save: "保存", recent_signals: "近期信号", action_line: "行动线", not_generated: "尚未生成", generated: "已生成",
+    evening_check_label: "晚间两分钟回看", outcome_placeholder: "今天实际发生了什么？这条行动线有没有帮助？", save_check: "保存回看",
+    lens_title: "看见一段时间里的模式", time_range: "时间范围", range_7: "7 天", range_30: "30 天", possible_observations: "可能的观察",
+    recording_rhythm: "记录节奏", by_date: "按日期", corpus_title: "个人语料库", copy_corpus: "复制语料", search_corpus: "搜索语料",
+    corpus_placeholder: "搜索原话、问题、身体信号、场景", backup_sync_title: "备份与同步", close: "关闭",
+    dialog_copy: "你的记录默认保存在这台设备上。云同步只保存加密后的数据。", export_markdown: "导出 Markdown", backup_json: "备份 JSON", restore_json: "恢复 JSON",
+    restore_old_history: "恢复旧历史", history_help_title: "旧历史口令", history_help_copy: "旧历史口令只用于恢复随 App 打包的历史记录；它和云同步的 Sync ID / 同步密语不是一回事。",
+    encrypted_sync: "加密同步", sync_id: "Sync ID", sync_id_placeholder: "例如 lily-vitality", sync_passphrase: "同步密语", sync_passphrase_placeholder: "只在本设备用于加密/解密",
+    save_settings: "保存设置", sync_now: "立即同步", pull: "拉取", push: "推送", sync_help: "手机和电脑使用同一个 Sync ID 与同步密语。",
+    unlock_copy: "输入旧历史口令，把随 App 打包的加密历史恢复到这台设备。", unlock_code: "旧历史口令", later: "稍后", unlock: "解锁", unlocking: "解锁中",
+    date_today: "今天", date_history: "历史", trace_count: "{count} 条记录", empty_traces: "还没有记录。一句话就够。", legacy: "旧历史", lifelog: "生命力日志",
+    extract_placeholder: "观察到的信号会出现在这里。", old_history_restored: "旧历史已恢复：合并了 {days} 天记录。", unlock_wrong: "口令不正确。这里需要旧历史口令，不是云同步密语。", unlock_hint: "提示：这个口令和 Sync ID / 同步密语是分开的。", old_history_already: "旧历史已经合并过。你仍然可以再次恢复来重新检查。", processing_device: "正在本设备处理。", secure_unlock_unsupported: "这个浏览器不支持安全解锁。", history_load_failed: "无法加载历史包。", unlock_failed: "解锁失败。", saved_locally: "本地已保存：{dates} 天，{traces} 条记录，{primings} 条 Priming。", local_only: "仅本地", last_sync: "上次同步 {time}", enter_sync_id: "请输入 Sync ID。", passphrase_rule: "同步密语至少需要 10 个字符。", voice_unsupported: "这里不支持 App 内语音输入。iPhone 上可以用键盘自带听写。"
+  }
+};
+function preferredLanguage() { try { return localStorage.getItem(LANGUAGE_KEY) || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"); } catch { return "zh"; } }
+function locale() { return currentLanguage === "zh" ? "zh-CN" : "en-US"; }
+function t(key, values = {}) { const template = I18N[currentLanguage]?.[key] ?? I18N.en[key] ?? key; return template.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? ""); }
+function labelFor(item) { return currentLanguage === "zh" ? (item.zh || item.label) : item.label; }
+function applyI18n() { document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en"; document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); }); document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); }); document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); }); document.querySelectorAll("[data-lang]").forEach((button) => button.classList.toggle("active", button.dataset.lang === currentLanguage)); }
+function setLanguage(language) { currentLanguage = language === "en" ? "en" : "zh"; try { localStorage.setItem(LANGUAGE_KEY, currentLanguage); } catch {} if (state?.settings) state.settings.language = currentLanguage; renderAll(); schedulePersist(); }
+function normalizeUnlockCode(value) { const clean = String(value || "").trim().replace(/[－–—]/g, "-").replace(/\s+/g, "").toUpperCase(); const compact = clean.replace(/-/g, ""); return /^[A-Z0-9]{16}$/.test(compact) ? compact.match(/.{1,4}/g).join("-") : clean; }
+function countHistoryDays(incoming) { const normalized = normalizeState(incoming); return Object.values(normalized.days || {}).filter((day) => day.traces?.length || day.primings?.length).length; }
+const QUICK_TAGS = [
+  { id: "body", label: "Body", zh: "身体" },
+  { id: "work", label: "Work", zh: "工作" },
+  { id: "relationship", label: "Relationship", zh: "关系" },
+  { id: "faith", label: "Faith", zh: "信仰" },
+  { id: "creation", label: "Creation", zh: "创作" },
+  { id: "sleep", label: "Sleep", zh: "睡眠" },
+  { id: "movement", label: "Movement", zh: "运动" },
+  { id: "dream", label: "Dream", zh: "梦境" },
+  { id: "media", label: "Books/Media", zh: "书影音" },
+  { id: "idea", label: "Idea", zh: "灵感" },
+];
+
+const EXTRACTION_DEFS = [
+  { id: "contexts", label: "Contexts", zh: "场景" },
+  { id: "events", label: "Events", zh: "事件" },
+  { id: "body_signals", label: "Body signals", zh: "身体信号" },
+  { id: "energy_signal", label: "Vitality signal", zh: "生命力信号" },
+  { id: "emotion_words", label: "Emotion words", zh: "情绪词" },
+  { id: "life_giving_moments", label: "Life-giving moments", zh: "让人展开的时刻" },
+  { id: "draining_moments", label: "Draining moments", zh: "消耗或收缩的时刻" },
+  { id: "questions", label: "Questions", zh: "留下的问题" },
+  { id: "user_phrases", label: "Original phrases", zh: "值得保留的原话" },
+];
+
+const ACTION_DEFS = [
+  { id: "mainline", label: "Main line", zh: "今日主线" },
+  { id: "top_tasks", label: "Top 1-3 tasks", zh: "今天最重要的 1-3 件事" },
+  { id: "first_action", label: "First action", zh: "第一步动作" },
+  { id: "possible_resistance", label: "Possible resistance", zh: "可能出现的阻力" },
+  { id: "if_resistance", label: "If resistance appears", zh: "如果阻力出现" },
+  { id: "not_today", label: "Not today", zh: "今天不需要做" },
+  { id: "finish_standard", label: "Finish standard", zh: "结束标准" },
+];
+
+const CONTEXT_KEYWORDS = {
+  Work: ["work", "meeting", "project", "contract", "email", "task", "PPA", "SPA", "\u5de5\u4f5c", "\u4f1a\u8bae", "\u9879\u76ee", "\u90ae\u4ef6", "\u4efb\u52a1"],
+  Relationship: ["relationship", "friend", "family", "mother", "father", "\u5173\u7cfb", "\u670b\u53cb", "\u7236\u6bcd", "\u5988\u5988", "\u7238\u7238"],
+  Body: ["body", "stomach", "sleep", "tired", "pain", "\u8eab\u4f53", "\u80c3", "\u7761\u7720", "\u7d2f", "\u75bc", "\u5395\u6240"],
+  Faith: ["faith", "pray", "God", "church", "\u4fe1\u4ef0", "\u7977\u544a", "\u795e", "\u6559\u4f1a"],
+  Creation: ["write", "article", "create", "corpus", "\u5199", "\u6587\u7ae0", "\u521b\u4f5c", "\u8bed\u6599"],
+  English: ["English", "class", "demo", "teaching", "\u82f1\u8bed", "\u8bfe\u5802", "\u8bd5\u8bb2", "\u6559\u5b66"],
+  System: ["AI", "app", "system", "sync", "Priming", "LifeLog", "\u7cfb\u7edf", "\u540c\u6b65", "\u5206\u6790"],
+};
+
+const BODY_WORDS = ["stomach", "sleep", "tired", "pain", "tense", "body", "\u80c3", "\u80a0\u80c3", "\u5395\u6240", "\u7761\u7720", "\u5931\u7720", "\u7d2f", "\u75bc", "\u7d27\u7ef7", "\u8eab\u4f53"];
+const EMOTION_WORDS = ["calm", "grateful", "clear", "anxious", "tense", "low", "stuck", "\u5e73\u5b89", "\u611f\u6069", "\u6e05\u695a", "\u7126\u8651", "\u7d27\u5f20", "\u4f4e\u843d", "\u5361"];
+const LIFE_GIVING_WORDS = ["clear", "alive", "calm", "grateful", "walk", "finished", "\u6e05\u695a", "\u751f\u547d\u529b", "\u5e73\u5b89", "\u611f\u6069", "\u6563\u6b65", "\u5b8c\u6210", "\u770b\u89c1"];
+const DRAINING_WORDS = ["tired", "anxious", "tense", "stuck", "delay", "resistance", "pressure", "\u7d2f", "\u7126\u8651", "\u7d27\u5f20", "\u5361", "\u62d6\u5ef6", "\u963b\u529b", "\u538b\u529b", "\u81ea\u8d23"];
+
+const $ = (selector) => document.querySelector(selector);
+let db = null;
+let state = createEmptyState();
+let currentDate = todayKey();
+let lastToday = currentDate;
+let currentMode = "observe";
+let selectedTags = new Set();
+let editingTraceId = null;
+let activePrimingId = null;
+let lensRange = 7;
+let toastTimer = null;
+let saveTimer = null;
+let recognition = null;
+let currentLanguage = preferredLanguage();
+let recognizing = false;
+
+function createEmptyState() {
+  return { version: 7, days: {}, settings: { sync: {}, language: currentLanguage }, migrations: [], seed_ids: [] };
+}
+function emptyDay(date) {
+  const now = new Date().toISOString();
+  return { date, traces: [], extraction: null, primings: [], metadata: { created_at: now, updated_at: now } };
+}
+function makeId() {
+  return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+function todayKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+function dateFromKey(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day, 12);
+}
+function formatDate(key, options) {
+  return new Intl.DateTimeFormat(locale(), options).format(dateFromKey(key));
+}
+function formatDateTime(value) {
+  try { return new Intl.DateTimeFormat(locale(), { hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
+  catch { return "now"; }
+}
+function recordedDates() {
+  return Object.keys(state.days).filter((date) => state.days[date]?.traces?.length || state.days[date]?.primings?.length).sort().reverse();
+}
+function escapeHtml(value) {
+  return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+function normalizeState(value = {}) {
+  if (value.version === 7 && value.days) return normalizeV7(value);
+  if (value.version === 6 && value.days) return normalizeV6(value);
+  if (value.daily_logs_by_date) return migrateLegacyState(value);
+  return createEmptyState();
+}
+function normalizeV7(value) {
+  const next = { ...createEmptyState(), ...value, days: value.days || {}, settings: { sync: {}, ...(value.settings || {}) }, migrations: Array.isArray(value.migrations) ? value.migrations : [], seed_ids: Array.isArray(value.seed_ids) ? value.seed_ids : [] };
+  Object.keys(next.days).forEach((date) => { next.days[date] = normalizeDay(next.days[date], date); });
+  return next;
+}
+function normalizeV6(value) {
+  const next = normalizeV7({ ...value, version: 7, settings: { sync: {}, ...(value.settings || {}) } });
+  if (!next.migrations.includes("v6-to-v7")) next.migrations.push("v6-to-v7");
+  return next;
+}
+function normalizeDay(day, date) {
+  const base = emptyDay(date || day.date || todayKey());
+  const next = { ...base, ...day, date: date || day.date || base.date };
+  next.traces = Array.isArray(day.traces) ? day.traces.map(normalizeTrace).filter((item) => item.text.trim()) : [];
+  next.primings = Array.isArray(day.primings) ? day.primings.map(normalizePriming) : [];
+  next.extraction = day.extraction || null;
+  next.metadata = day.metadata || base.metadata;
+  return next;
+}
+function normalizeTrace(trace) {
+  const now = new Date().toISOString();
+  return { id: trace.id || makeId(), created_at: trace.created_at || trace.createdAt || now, updated_at: trace.updated_at || trace.updatedAt || trace.created_at || now, text: String(trace.text || trace.raw_input || ""), tags: Array.isArray(trace.tags) ? trace.tags : [], source: trace.source || "manual" };
+}
+function normalizePriming(session) {
+  const now = new Date().toISOString();
+  return { id: session.id || makeId(), created_at: session.created_at || session.createdAt || now, updated_at: session.updated_at || session.updatedAt || now, raw: session.raw || session.rawTranscript || "", action_line: session.action_line || cardsToActionLine(session.cards) || emptyActionLine(), outcome: session.outcome || "" };
+}
+function migrateLegacyState(value) {
+  const next = createEmptyState();
+  next.settings = { sync: {}, ...(value.settings || {}) };
+  next.migrations = Array.isArray(value.migrations) ? value.migrations : [];
+  next.seed_ids = Array.isArray(value.seed_ids) ? value.seed_ids : [];
+  Object.entries(value.daily_logs_by_date || {}).forEach(([date, log]) => {
+    const day = emptyDay(date);
+    const text = String(log.raw_input || "").trim();
+    if (text) {
+      day.traces.push({ id: makeId(), created_at: log.metadata?.created_at || `${date}T12:00:00.000Z`, updated_at: log.metadata?.updated_at || log.metadata?.created_at || `${date}T12:00:00.000Z`, text, tags: [], source: "legacy-life-log" });
+      day.extraction = buildExtraction(day);
+    }
+    next.days[date] = day;
+  });
+  if (!next.migrations.includes("legacy-v5-to-v7")) next.migrations.push("legacy-v5-to-v7");
+  return next;
+}
+function cardsToActionLine(cards = []) {
+  if (!Array.isArray(cards) || !cards.length) return null;
+  const map = {};
+  cards.forEach((card) => { map[card.id] = card.text || ""; });
+  return { mainline: map.mainTask || "", top_tasks: map.processSteps || "", first_action: map.firstAction || "", possible_resistance: map.likelyResistance || "", if_resistance: map.ifThenPlan || "", not_today: map.supportPlan || "", finish_standard: map.doneDefinition || map.todayArtifact || "" };
+}
+function emptyActionLine() { return Object.fromEntries(ACTION_DEFS.map((def) => [def.id, ""])); }
+function ensureDay(date = currentDate) {
+  if (!state.days[date]) state.days[date] = emptyDay(date);
+  return state.days[date];
+}
+function openDb(name = DB_NAME) {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("IndexedDB unavailable"));
+    const request = indexedDB.open(name, 1);
+    request.onupgradeneeded = () => {
+      const next = request.result;
+      if (!next.objectStoreNames.contains(DB_STORE)) next.createObjectStore(DB_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+function idbGet(database, key) {
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(DB_STORE, "readonly");
+    const request = tx.objectStore(DB_STORE).get(key);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error);
+  });
+}
+function idbPut(database, key, value) {
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function loadState() {
+  try {
+    db = await openDb(DB_NAME);
+    const saved = await idbGet(db, DB_KEY);
+    if (saved) return normalizeState(saved);
+  } catch { db = null; }
+  try {
+    const legacyDb = await openDb(LEGACY_DB_NAME);
+    const legacySaved = await idbGet(legacyDb, DB_KEY);
+    legacyDb.close();
+    if (legacySaved) return normalizeState(legacySaved);
+  } catch {}
+  try {
+    const fallback = JSON.parse(localStorage.getItem(FALLBACK_KEY) || "null") || JSON.parse(localStorage.getItem("life-log-v5-fallback") || "null");
+    if (fallback) return normalizeState(fallback);
+  } catch {}
+  return createEmptyState();
+}
+async function persistState() {
+  try {
+    if (!db) db = await openDb(DB_NAME);
+    await idbPut(db, DB_KEY, state);
+  } catch {
+    localStorage.setItem(FALLBACK_KEY, JSON.stringify(state));
+  }
+  renderStorageSummary();
+}
+function schedulePersist() { clearTimeout(saveTimer); saveTimer = setTimeout(() => persistState(), 260); }
+function showToast(message) {
+  clearTimeout(toastTimer);
+  const toast = $("#toast");
+  toast.textContent = message;
+  toast.hidden = false;
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 2300);
+}
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll(".mode-tab").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+  document.querySelectorAll(".mode-panel").forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === mode));
+  if (mode === "orient") renderOrient();
+  if (mode === "lens") renderLens();
+  if (mode === "corpus") renderCorpus();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function renderAll() {
+  renderQuickTags(); renderObserve(); renderOrient(); renderLens(); renderCorpus(); renderSyncSettings(); renderStorageSummary(); applyI18n();
+}
+function renderQuickTags() {
+  $("#quick-tags").innerHTML = QUICK_TAGS.map((tag) => `<button class="tag-chip ${selectedTags.has(tag.id) ? "active" : ""}" type="button" data-tag="${tag.id}">${labelFor(tag)}</button>`).join("");
+}
+function renderObserve() {
+  const day = ensureDay(currentDate);
+  const isToday = currentDate === todayKey();
+  $("#date-meta").textContent = `${isToday ? t("date_today") : t("date_history")} · ${formatDate(currentDate, { weekday: "long" })} · ${formatDate(currentDate, { month: "long", day: "numeric" })}`;
+  $("#return-today").hidden = isToday;
+  $("#trace-count").textContent = t("trace_count", { count: day.traces.length, plural: day.traces.length === 1 ? "" : "s" });
+  renderTodayTraces(day);
+  renderExtraction(day);
+  document.title = `${formatDate(currentDate, { month: "numeric", day: "numeric" })} · Vitality Journal`;
+}
+function renderTodayTraces(day) {
+  if (!day.traces.length) {
+    $("#today-traces").innerHTML = `<p class="empty-state">${t("empty_traces")}</p>`;
+    return;
+  }
+  $("#today-traces").innerHTML = [...day.traces].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map((trace) => `
+    <article class="trace-item" data-trace-id="${trace.id}">
+      <div class="trace-main">
+        <div class="trace-meta"><span>${formatDateTime(trace.created_at)}</span><span>${trace.source === "legacy-life-log" ? t("legacy") : t("lifelog")}</span></div>
+        <p class="trace-text">${escapeHtml(trace.text)}</p>
+        ${trace.tags?.length ? `<div class="trace-tags">${trace.tags.map((tag) => `<span>${tagLabel(tag)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="trace-actions"><button type="button" data-action="edit">Edit</button><button type="button" data-action="delete">Delete</button></div>
+    </article>`).join("");
+}
+function renderExtraction(day) {
+  if (!day.extraction) day.extraction = buildExtraction(day);
+  const fields = day.extraction.fields || emptyExtractionFields();
+  $("#extraction-fields").innerHTML = EXTRACTION_DEFS.map((def) => `
+    <div class="extract-field">
+      <label for="extract-${def.id}">${labelFor(def)}</label>
+      <textarea id="extract-${def.id}" data-extract-id="${def.id}" rows="3" placeholder="${t("extract_placeholder")}">${escapeHtml(formatFieldValue(fields[def.id]))}</textarea>
+    </div>`).join("");
+}
+function emptyExtractionFields() { return Object.fromEntries(EXTRACTION_DEFS.map((def) => [def.id, []])); }
+function buildExtraction(day) { return { updated_at: new Date().toISOString(), fields: extractFieldsFromDay(day) }; }
+function extractFieldsFromDay(day) {
+  const traces = day.traces || [];
+  const text = traces.map((trace) => trace.text).join("\n");
+  const sentences = splitSentences(text);
+  const contexts = new Set();
+  traces.forEach((trace) => (trace.tags || []).forEach((tag) => contexts.add(tagLabel(tag))));
+  Object.entries(CONTEXT_KEYWORDS).forEach(([context, words]) => { if (words.some((word) => text.toLowerCase().includes(word.toLowerCase()))) contexts.add(context); });
+  const bodySignals = pickWords(text, BODY_WORDS);
+  const emotionWords = pickWords(text, EMOTION_WORDS);
+  const lifeGiving = sentences.filter((sentence) => hasAny(sentence, LIFE_GIVING_WORDS)).slice(0, 6);
+  const draining = sentences.filter((sentence) => hasAny(sentence, DRAINING_WORDS)).slice(0, 6);
+  const questions = sentences.filter((sentence) => /[?？]|how|why|whether|should|怎么办|如何|为什么|要不要/.test(sentence)).slice(0, 8);
+  const events = sentences.filter((sentence) => sentence.length >= 8 && !questions.includes(sentence)).slice(0, 6);
+  const phrases = sentences.filter((sentence) => sentence.length >= 10 && sentence.length <= 100).slice(0, 10);
+  const energySignal = describeEnergySignal({ lifeGiving, draining, bodySignals, text });
+  return { contexts: [...contexts].slice(0, 10), events, body_signals: bodySignals, energy_signal: energySignal ? [energySignal] : [], emotion_words: emotionWords, life_giving_moments: lifeGiving, draining_moments: draining, questions, user_phrases: phrases };
+}
+function describeEnergySignal({ lifeGiving, draining, bodySignals, text }) {
+  if (!text.trim()) return "";
+  const parts = [];
+  if (lifeGiving.length) parts.push("Records show moments that may feel clarifying or life-giving");
+  if (draining.length) parts.push("Records also include stuck, tense, or draining fragments");
+  if (bodySignals.length) parts.push("Body signals were explicitly mentioned");
+  return parts.length ? `${parts.join("; ")}.` : "Records mainly preserve facts and thoughts; no repeated signal is visible yet.";
+}
+function saveTrace() {
+  const input = $("#trace-input");
+  const text = input.value.trim();
+  if (!text) { showToast(currentLanguage === "zh" ? "一句话就可以保存。" : "One sentence is enough to save."); return; }
+  const day = ensureDay(currentDate);
+  const now = new Date().toISOString();
+  if (editingTraceId) {
+    const trace = day.traces.find((item) => item.id === editingTraceId);
+    if (trace) { trace.text = text; trace.tags = [...selectedTags]; trace.updated_at = now; }
+    editingTraceId = null;
+    $("#save-trace").textContent = t("save_trace");
+  } else {
+    day.traces.push({ id: makeId(), created_at: now, updated_at: now, text, tags: [...selectedTags], source: "manual" });
+  }
+  day.metadata.updated_at = now;
+  day.extraction = buildExtraction(day);
+  input.value = "";
+  selectedTags.clear();
+  renderQuickTags(); renderObserve(); renderLens(); renderCorpus(); schedulePersist();
+  showToast(currentLanguage === "zh" ? "记录已保存。原文会被保留。" : "Trace saved. Original text is preserved.");
+}
+function editTrace(traceId) {
+  const trace = ensureDay(currentDate).traces.find((item) => item.id === traceId);
+  if (!trace) return;
+  editingTraceId = traceId;
+  $("#trace-input").value = trace.text;
+  selectedTags = new Set(trace.tags || []);
+  $("#save-trace").textContent = currentLanguage === "zh" ? "更新记录" : "Update trace";
+  renderQuickTags();
+  $("#trace-input").focus();
+}
+function deleteTrace(traceId) {
+  const day = ensureDay(currentDate);
+  day.traces = day.traces.filter((trace) => trace.id !== traceId);
+  day.extraction = buildExtraction(day);
+  renderObserve(); renderLens(); renderCorpus(); schedulePersist();
+  showToast(currentLanguage === "zh" ? "记录已删除。" : "Trace deleted.");
+}
+function recomputeExtraction() {
+  const day = ensureDay(currentDate);
+  day.extraction = buildExtraction(day);
+  renderExtraction(day); schedulePersist();
+  showToast(currentLanguage === "zh" ? "抽取已刷新，原始记录没有改变。" : "Extraction refreshed. Original traces are unchanged.");
+}
+function saveExtractionField(target) {
+  const day = ensureDay(currentDate);
+  if (!day.extraction) day.extraction = buildExtraction(day);
+  day.extraction.fields[target.dataset.extractId] = parseFieldValue(target.value);
+  day.extraction.updated_at = new Date().toISOString();
+  schedulePersist();
+}
+function ensureActivePriming() {
+  const day = ensureDay(currentDate);
+  if (!day.primings.length) {
+    const session = createPriming();
+    day.primings.push(session);
+    activePrimingId = session.id;
+  }
+  if (!activePrimingId || !day.primings.some((item) => item.id === activePrimingId)) activePrimingId = day.primings[day.primings.length - 1].id;
+  return day.primings.find((item) => item.id === activePrimingId);
+}
+function createPriming() {
+  const now = new Date().toISOString();
+  return { id: makeId(), created_at: now, updated_at: now, raw: "", action_line: emptyActionLine(), outcome: "" };
+}
+function renderOrient() {
+  const session = ensureActivePriming();
+  $("#priming-input").value = session.raw || "";
+  $("#outcome-input").value = session.outcome || "";
+  $("#priming-status").textContent = session.action_line?.mainline ? `${t("generated")} · ${formatDateTime(session.updated_at)}` : t("not_generated");
+  renderActionFields(session.action_line || emptyActionLine());
+  renderRecentSignals();
+}
+function renderActionFields(actionLine) {
+  $("#action-fields").innerHTML = ACTION_DEFS.map((def) => `
+    <div class="action-field">
+      <label for="action-${def.id}">${labelFor(def)}</label>
+      <textarea id="action-${def.id}" data-action-id="${def.id}" rows="2" placeholder="${currentLanguage === "zh" ? "你可以编辑这里。" : "You can edit this."}">${escapeHtml(actionLine[def.id] || "")}</textarea>
+    </div>`).join("");
+}
+function newPriming() {
+  savePriming({ quiet: true });
+  const session = createPriming();
+  ensureDay(currentDate).primings.push(session);
+  activePrimingId = session.id;
+  renderOrient(); schedulePersist();
+  showToast(currentLanguage === "zh" ? "新的 Priming 已创建。" : "New priming created.");
+}
+function readActionFields() {
+  const result = emptyActionLine();
+  ACTION_DEFS.forEach((def) => { result[def.id] = $(`[data-action-id="${def.id}"]`)?.value || ""; });
+  return result;
+}
+function savePriming({ quiet = false } = {}) {
+  const session = ensureActivePriming();
+  session.raw = $("#priming-input").value;
+  session.action_line = readActionFields();
+  session.outcome = $("#outcome-input").value;
+  session.updated_at = new Date().toISOString();
+  ensureDay(currentDate).metadata.updated_at = session.updated_at;
+  schedulePersist();
+  if (!quiet) showToast(currentLanguage === "zh" ? "Priming 已保存。" : "Priming saved.");
+}
+function generateActionLine() {
+  const raw = $("#priming-input").value.trim();
+  if (!raw) { showToast(currentLanguage === "zh" ? "先写下或口述一小段 Priming。" : "Write or dictate a short priming first."); return; }
+  const actionLine = localGenerateActionLine(raw, buildRecentSignals(7));
+  const session = ensureActivePriming();
+  session.raw = raw;
+  session.action_line = actionLine;
+  session.updated_at = new Date().toISOString();
+  renderActionFields(actionLine);
+  $("#priming-status").textContent = `${t("generated")} · ${formatDateTime(session.updated_at)}`;
+  schedulePersist();
+  showToast(currentLanguage === "zh" ? "行动线已生成，可以继续编辑。" : "Action line generated. You can edit any field.");
+}
+function saveOutcome() { savePriming({ quiet: true }); showToast(currentLanguage === "zh" ? "晚间回看已保存。" : "Evening check saved."); }
+function localGenerateActionLine(raw, recent) {
+  const sentences = splitSentences(raw);
+  const taskSentences = sentences.filter((s) => /today|need|plan|finish|write|reply|do|complete|output|今天|需要|计划|完成|写|处理|推进|输出|复盘/.test(s)).slice(0, 5);
+  const resistance = findSentence(sentences, /resistance|stuck|worry|delay|tired|anxious|阻力|卡|担心|拖延|累|焦虑|紧张/) || recent.resistanceHint;
+  const firstAction = findSentence(sentences, /first|start|open|15|第一步|先|开始|打开/) || buildFirstAction(taskSentences[0]);
+  const finish = findSentence(sentences, /finish|done|standard|complete|完成|结束|产出|做到/) || "Leave one saved result, or write where today actually landed.";
+  const mainline = findSentence(sentences, /main|important|today|主线|最重要|重点|今天/) || taskSentences[0] || "Narrow today to one line that can be started.";
+  const notToday = taskSentences.length > 3 ? "Not all branches need to be opened today. Keep the top 1-3." : "No need to solve every later question before starting.";
+  return { mainline: `You mentioned this possible main line: ${trimSentence(mainline, 90)}`, top_tasks: formatList(taskSentences.length ? taskSentences.slice(0, 3) : ["Choose the one thing that most needs movement today"]), first_action: firstAction, possible_resistance: resistance || "No clear resistance word is visible yet. Add one sentence if helpful: where might I stop?", if_resistance: resistance ? `If this appears: ${trimSentence(resistance, 60)}, shrink the next step to 15 minutes.` : "If things get vague, write one sentence: what is the visible next step?", not_today: notToday, finish_standard: finish };
+}
+function buildFirstAction(task) { return task ? `Do 15 minutes first: ${trimSentence(task, 70)}` : "Do a 15-minute version. The goal is to start, not finish everything."; }
+function renderRecentSignals() {
+  const recent = buildRecentSignals(7);
+  const items = [];
+  if (recent.contexts.length) items.push(`Recent contexts: ${recent.contexts.slice(0, 4).join(", ")}.`);
+  if (recent.body.length) items.push(`Body signals mentioned: ${recent.body.slice(0, 4).join(", ")}.`);
+  if (recent.resistanceHint) items.push(`A recent resistance fragment: ${trimSentence(recent.resistanceHint, 80)}.`);
+  if (recent.lifeGiving.length) items.push(`A recent life-giving fragment: ${trimSentence(recent.lifeGiving[0], 80)}.`);
+  $("#recent-signals").innerHTML = items.length ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : `<p class="empty-state">Not enough recent traces yet. This priming will use the current text first.</p>`;
+}
+function buildRecentSignals(daysBack) {
+  const days = daysInRange(daysBack);
+  return { contexts: topKeys(countValues(days.flatMap((day) => getExtractionFields(day).contexts || []))), body: topKeys(countValues(days.flatMap((day) => getExtractionFields(day).body_signals || []))), resistanceHint: days.flatMap((day) => getExtractionFields(day).draining_moments || [])[0] || "", lifeGiving: days.flatMap((day) => getExtractionFields(day).life_giving_moments || []) };
+}
+function renderLens() {
+  const days = daysInRange(lensRange);
+  const activeDays = days.filter((day) => day.traces.length || day.primings.length);
+  const traceCount = activeDays.reduce((sum, day) => sum + day.traces.length, 0);
+  const primingCount = activeDays.reduce((sum, day) => sum + day.primings.length, 0);
+  const phraseCount = activeDays.reduce((sum, day) => sum + (getExtractionFields(day).user_phrases || []).length, 0);
+  $("#lens-summary").innerHTML = [metric("Recorded days", activeDays.length, `${lensRange} day window`), metric("Raw traces", traceCount, "original text preserved"), metric("Action lines", primingCount, "saved priming sessions"), metric("Corpus items", phraseCount, "phrases and questions")].join("");
+  $("#lens-days").textContent = `${lensRange} days`;
+  renderObservations(activeDays);
+  renderTimeline(lensRange);
+}
+function metric(label, value, copy) { return `<div class="metric"><strong>${value}</strong><span>${escapeHtml(label)} · ${escapeHtml(copy)}</span></div>`; }
+function renderObservations(days) {
+  const fields = days.map(getExtractionFields);
+  const contexts = topKeys(countValues(fields.flatMap((field) => field.contexts || []))).slice(0, 5);
+  const body = topKeys(countValues(fields.flatMap((field) => field.body_signals || []))).slice(0, 5);
+  const emotions = topKeys(countValues(fields.flatMap((field) => field.emotion_words || []))).slice(0, 5);
+  const lifeGiving = fields.flatMap((field) => field.life_giving_moments || []);
+  const draining = fields.flatMap((field) => field.draining_moments || []);
+  const observations = [];
+  if (contexts.length) observations.push(`Records show these recurring contexts: ${contexts.join(", ")}.`);
+  if (body.length) observations.push(`Body signals mentioned more than once include: ${body.join(", ")}.`);
+  if (emotions.length) observations.push(`Emotion words you used include: ${emotions.join(", ")}. These are kept as your words, not labels.`);
+  if (lifeGiving.length) observations.push(`One life-giving fragment: ${trimSentence(lifeGiving[0], 100)}.`);
+  if (draining.length) observations.push(`One draining or stuck fragment: ${trimSentence(draining[0], 100)}.`);
+  if (!observations.length) observations.push("There are not enough traces yet. Keep recording; patterns will become visible over time.");
+  $("#observations").innerHTML = `<ul>${observations.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+function renderTimeline(daysBack) {
+  const dates = [...Array(daysBack)].map((_, index) => { const date = new Date(); date.setDate(date.getDate() - (daysBack - index - 1)); return todayKey(date); });
+  const max = Math.max(1, ...dates.map((date) => (state.days[date]?.traces?.length || 0) + (state.days[date]?.primings?.length || 0)));
+  $("#timeline").innerHTML = dates.map((date) => { const day = state.days[date]; const count = (day?.traces?.length || 0) + (day?.primings?.length || 0); const width = count ? Math.max(6, Math.round((count / max) * 100)) : 0; return `<div class="timeline-row"><span>${formatDate(date, { month: "numeric", day: "numeric" })}</span><div class="timeline-bar"><span class="timeline-fill" style="width:${width}%"></span></div><span>${count}</span></div>`; }).join("");
+}
+function renderCorpus() {
+  const query = $("#corpus-search")?.value?.trim().toLowerCase() || "";
+  const items = buildCorpusItems().filter((item) => !query || `${item.text} ${item.kind} ${item.date}`.toLowerCase().includes(query)).slice(0, 80);
+  $("#corpus-list").innerHTML = items.length ? items.map((item) => `<article class="corpus-item"><header><span>${escapeHtml(item.date)} · <span class="corpus-kind">${escapeHtml(item.kind)}</span></span><span>${escapeHtml(item.source)}</span></header><p>${escapeHtml(item.text)}</p></article>`).join("") : `<p class="empty-state">No matching corpus item yet.</p>`;
+}
+function buildCorpusItems() {
+  const items = [];
+  recordedDates().forEach((date) => {
+    const day = state.days[date];
+    day.traces.forEach((trace) => items.push({ date, kind: "Raw trace", source: formatDateTime(trace.created_at), text: trace.text }));
+    const fields = getExtractionFields(day);
+    (fields.user_phrases || []).forEach((text) => items.push({ date, kind: "Original phrase", source: "Extraction", text }));
+    (fields.questions || []).forEach((text) => items.push({ date, kind: "Question", source: "Extraction", text }));
+    day.primings.forEach((session) => {
+      const line = session.action_line || {};
+      ACTION_DEFS.forEach((def) => { if (line[def.id]?.trim()) items.push({ date, kind: labelFor(def), source: "Priming", text: line[def.id] }); });
+      if (session.outcome?.trim()) items.push({ date, kind: "Evening check", source: "Outcome", text: session.outcome });
+    });
+  });
+  return items;
+}
+function copyCorpus() {
+  const text = buildCorpusItems().map((item) => `## ${item.date} · ${item.kind}\n${item.text}`).join("\n\n");
+  if (!text.trim()) { showToast("No corpus to copy yet."); return; }
+  navigator.clipboard?.writeText(text).then(() => showToast("Corpus copied."), () => showToast("Clipboard is unavailable. Use export instead."));
+}
+function getExtractionFields(day) { if (!day.extraction) day.extraction = buildExtraction(day); return day.extraction.fields || emptyExtractionFields(); }
+function daysInRange(daysBack) { const start = new Date(); start.setDate(start.getDate() - daysBack + 1); start.setHours(0, 0, 0, 0); return recordedDates().map((date) => state.days[date]).filter((day) => dateFromKey(day.date) >= start).sort((a, b) => a.date.localeCompare(b.date)); }
+function countValues(values) { const counts = new Map(); values.filter(Boolean).forEach((value) => counts.set(value, (counts.get(value) || 0) + 1)); return counts; }
+function topKeys(map) { return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], locale())).map(([key]) => key); }
+function pickWords(text, words) { const lower = text.toLowerCase(); return words.filter((word) => lower.includes(word.toLowerCase())).slice(0, 12); }
+function hasAny(text, words) { const lower = text.toLowerCase(); return words.some((word) => lower.includes(word.toLowerCase())); }
+function splitSentences(text) { return String(text || "").split(/[.!?;。！？；\n]/).map((item) => item.replace(/\s+/g, " ").trim()).filter(Boolean); }
+function findSentence(sentences, pattern) { return sentences.find((sentence) => pattern.test(sentence)) || ""; }
+function trimSentence(text, length) { const clean = String(text || "").replace(/\s+/g, " ").trim(); return clean.length > length ? `${clean.slice(0, length)}...` : clean; }
+function formatList(items) { return items.map((item, index) => `${index + 1}. ${trimSentence(item, 100)}`).join("\n"); }
+function formatFieldValue(value) { return Array.isArray(value) ? value.join("\n") : (value || ""); }
+function parseFieldValue(value) { return String(value || "").split(/\n/).map((item) => item.trim()).filter(Boolean); }
+function tagLabel(id) { const tag = QUICK_TAGS.find((item) => item.id === id); return tag ? labelFor(tag) : id; }
+function renderSyncSettings() {
+  const sync = state.settings.sync || {};
+  if ($("#sync-id")) $("#sync-id").value = sync.sync_id || "";
+  renderSyncStatus(sync.last_synced_at ? t("last_sync", { time: new Date(sync.last_synced_at).toLocaleString(locale()) }) : t("local_only"));
+}
+function renderSyncStatus(text) { if ($("#sync-status")) $("#sync-status").textContent = text; }
+function getSyncCredentials() {
+  const syncId = $("#sync-id")?.value.trim();
+  const passphrase = $("#sync-passphrase")?.value;
+  if (!syncId) throw new Error(t("enter_sync_id"));
+  if (!/^[a-zA-Z0-9_-]{3,80}$/.test(syncId)) throw new Error("Sync ID can use letters, numbers, dash, and underscore only.");
+  if (!passphrase || passphrase.length < 10) throw new Error(t("passphrase_rule"));
+  return { syncId, passphrase };
+}
+function saveSyncSettings() {
+  const syncId = $("#sync-id")?.value.trim();
+  if (!syncId) { showToast(t("enter_sync_id")); return; }
+  state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId };
+  schedulePersist();
+  renderSyncStatus(currentLanguage === "zh" ? "Sync ID 已保存" : "Sync ID saved");
+  showToast(currentLanguage === "zh" ? "同步设置已保存在本设备。" : "Sync settings saved on this device.");
+}
+function cloneForSync() {
+  const copy = JSON.parse(JSON.stringify(state));
+  copy.settings = { ...(copy.settings || {}), sync: { ...(copy.settings?.sync || {}) } };
+  delete copy.settings.sync.last_error;
+  return copy;
+}
+async function deriveSyncKey(passphrase, saltB64) {
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt: bytesFromBase64(saltB64), iterations: SYNC_ITERATIONS }, material, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function encryptState(syncId, passphrase, existingSalt) {
+  const salt = existingSalt || randomBase64(16);
+  const iv = randomBase64(12);
+  const key = await deriveSyncKey(passphrase, salt);
+  const plaintext = JSON.stringify({ exported_at: new Date().toISOString(), state: cloneForSync() });
+  const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv: bytesFromBase64(iv), additionalData: new TextEncoder().encode(syncId) }, key, new TextEncoder().encode(plaintext));
+  return { version: 1, app: "vitality-journal", sync_id: syncId, salt, iv, iterations: SYNC_ITERATIONS, ciphertext: base64FromBytes(new Uint8Array(cipher)), updated_at: new Date().toISOString() };
+}
+async function decryptEnvelope(envelope, passphrase) {
+  if (!envelope?.salt || !envelope?.iv || !envelope?.ciphertext) throw new Error("Remote sync data is not recognized.");
+  const syncId = envelope.sync_id || $("#sync-id")?.value.trim() || "";
+  const key = await deriveSyncKey(passphrase, envelope.salt);
+  const clear = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytesFromBase64(envelope.iv), additionalData: new TextEncoder().encode(syncId) }, key, bytesFromBase64(envelope.ciphertext));
+  return JSON.parse(new TextDecoder().decode(clear));
+}
+async function fetchRemoteEnvelope(syncId) {
+  const response = await fetch(`${SYNC_API_BASE}/${encodeURIComponent(syncId)}`, { cache: "no-store" });
+  if (response.status === 404) return null;
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Sync pull failed.");
+  return payload.envelope || null;
+}
+async function putRemoteEnvelope(syncId, envelope) {
+  const response = await fetch(`${SYNC_API_BASE}/${encodeURIComponent(syncId)}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ envelope }) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "Sync push failed.");
+  return payload;
+}
+async function pullSync({ quiet = false } = {}) {
+  const { syncId, passphrase } = getSyncCredentials();
+  renderSyncStatus(currentLanguage === "zh" ? "正在拉取..." : "Pulling...");
+  const envelope = await fetchRemoteEnvelope(syncId);
+  if (!envelope) {
+    renderSyncStatus(currentLanguage === "zh" ? "云端还没有数据" : "No remote data yet");
+    if (!quiet) showToast(currentLanguage === "zh" ? "云端还没有这个 Journal。请先在有数据的设备上 Push。" : "No remote journal found yet. Push this device first.");
+    state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId };
+    schedulePersist();
+    return null;
+  }
+  const decrypted = await decryptEnvelope(envelope, passphrase);
+  const incoming = normalizeState(decrypted.state || decrypted);
+  mergeIncomingState(incoming);
+  state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId, salt: envelope.salt, last_synced_at: new Date().toISOString() };
+  await persistState();
+  renderAll();
+  if (!quiet) showToast(currentLanguage === "zh" ? "已拉取并合并加密 Journal。" : "Encrypted journal pulled and merged.");
+  return envelope;
+}
+async function pushSync({ quiet = false } = {}) {
+  const { syncId, passphrase } = getSyncCredentials();
+  renderSyncStatus(currentLanguage === "zh" ? "正在加密..." : "Encrypting...");
+  state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId };
+  const envelope = await encryptState(syncId, passphrase, state.settings.sync.salt);
+  renderSyncStatus(currentLanguage === "zh" ? "正在上传..." : "Uploading...");
+  await putRemoteEnvelope(syncId, envelope);
+  state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId, salt: envelope.salt, last_synced_at: envelope.updated_at };
+  await persistState();
+  renderSyncStatus(t("last_sync", { time: new Date(envelope.updated_at).toLocaleString(locale()) }));
+  if (!quiet) showToast(currentLanguage === "zh" ? "已推送加密 Journal。" : "Encrypted journal pushed.");
+  return envelope;
+}
+async function syncNow() {
+  try {
+    const syncId = $("#sync-id")?.value.trim();
+    if (syncId) state.settings.sync = { ...(state.settings.sync || {}), sync_id: syncId };
+    await pullSync({ quiet: true });
+    await pushSync({ quiet: true });
+    renderAll();
+    showToast(currentLanguage === "zh" ? "同步完成。" : "Sync complete.");
+  } catch (error) {
+    renderSyncStatus("Sync needs attention");
+    showToast(error.message || "Sync failed.");
+  }
+}
+async function safePullSync() { try { await pullSync(); } catch (error) { renderSyncStatus("Pull failed"); showToast(error.message || "Pull failed."); } }
+async function safePushSync() { try { await pushSync(); } catch (error) { renderSyncStatus("Push failed"); showToast(error.message || "Push failed."); } }
+function randomBase64(length) {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return base64FromBytes(bytes);
+}
+function base64FromBytes(bytes) {
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary);
+}
+function bytesFromBase64(value) {
+  const binary = atob(value);
+  return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+function mergeIncomingState(incoming) {
+  Object.entries(incoming.days || {}).forEach(([date, incomingDay]) => {
+    const day = ensureDay(date);
+    mergeById(day.traces, incomingDay.traces || []);
+    mergeById(day.primings, incomingDay.primings || []);
+    day.extraction = buildExtraction(day);
+    day.metadata.updated_at = new Date().toISOString();
+  });
+}
+function mergeById(target, incoming) {
+  const index = new Map(target.map((item, position) => [item.id, position]));
+  incoming.forEach((item) => {
+    if (!item?.id) return;
+    if (!index.has(item.id)) {
+      target.push(item);
+      return;
+    }
+    const currentPosition = index.get(item.id);
+    const current = target[currentPosition];
+    if (new Date(item.updated_at || item.updatedAt || item.created_at || 0) > new Date(current.updated_at || current.updatedAt || current.created_at || 0)) target[currentPosition] = item;
+  });
+}
+function markdownExport() {
+  savePriming({ quiet: true });
+  const dates = [...recordedDates()].reverse();
+  const lines = ["# Vitality Journal", ""];
+  dates.forEach((date) => {
+    const day = state.days[date];
+    lines.push(`## ${formatDate(date, { year: "numeric", month: "long", day: "numeric", weekday: "long" })}`, "");
+    if (day.traces.length) {
+      lines.push("### Raw traces", "");
+      day.traces.forEach((trace) => lines.push(`- ${formatDateTime(trace.created_at)} ${trace.text.replace(/\n/g, " ")}`));
+      lines.push("");
+    }
+    const fields = getExtractionFields(day);
+    if (Object.values(fields).some((value) => value?.length)) {
+      lines.push("### Neutral extraction", "");
+      EXTRACTION_DEFS.forEach((def) => { if (fields[def.id]?.length) lines.push(`#### ${labelFor(def)}`, formatFieldValue(fields[def.id]), ""); });
+    }
+    if (day.primings.length) {
+      lines.push("### Priming", "");
+      day.primings.forEach((session, index) => {
+        lines.push(`#### Session ${index + 1}`, "");
+        if (session.raw?.trim()) lines.push("Raw priming:", session.raw.trim(), "");
+        ACTION_DEFS.forEach((def) => { const value = session.action_line?.[def.id]; if (value?.trim()) lines.push(`- ${labelFor(def)}: ${value.replace(/\n/g, " ")}`); });
+        if (session.outcome?.trim()) lines.push("", "Evening check:", session.outcome.trim(), "");
+      });
+    }
+    lines.push("---", "");
+  });
+  download(`vitality-journal-${todayKey()}.md`, lines.join("\n"), "text/markdown;charset=utf-8");
+  showToast("Markdown exported.");
+}
+function jsonExport() { savePriming({ quiet: true }); download(`vitality-journal-backup-${todayKey()}.json`, JSON.stringify({ exported_at: new Date().toISOString(), ...state }, null, 2), "application/json;charset=utf-8"); showToast("JSON backup exported."); }
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function importBackup(file) {
+  if (!file) return;
+  try {
+    const incoming = normalizeState(JSON.parse(await file.text()));
+    mergeIncomingState(incoming);
+    await persistState(); renderAll(); $("#export-dialog").close(); showToast("Backup merged.");
+  } catch (error) { showToast(error.message || "Import failed."); }
+  finally { $("#import-file").value = ""; }
+}
+function renderStorageSummary() {
+  const target = $("#storage-summary");
+  if (!target) return;
+  const dates = recordedDates().length;
+  const traces = recordedDates().reduce((sum, date) => sum + state.days[date].traces.length, 0);
+  const primings = recordedDates().reduce((sum, date) => sum + state.days[date].primings.length, 0);
+  target.textContent = t("saved_locally", { dates, traces, primings });
+}
+function checkDateRoll() {
+  const today = todayKey();
+  if (today === lastToday) return;
+  const previous = lastToday;
+  lastToday = today;
+  if (currentDate === previous) { currentDate = today; activePrimingId = null; renderAll(); showToast("A new day has started."); }
+}
+async function decryptHistory(passphrase) {
+  if (!crypto?.subtle) throw new Error(t("secure_unlock_unsupported"));
+  const response = await fetch(HISTORY_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(t("history_load_failed"));
+  const envelope = await response.json();
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(passphrase), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt: bytesFromBase64(envelope.salt), iterations: envelope.iterations }, material, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+  const clear = await crypto.subtle.decrypt({ name: "AES-GCM", iv: bytesFromBase64(envelope.iv), additionalData: HISTORY_AAD }, key, bytesFromBase64(envelope.ciphertext));
+  return JSON.parse(new TextDecoder().decode(clear));
+}
+function mergeHistory(incoming) {
+  mergeIncomingState(normalizeState(incoming));
+  if (!state.migrations.includes(HISTORY_ID)) state.migrations.push(HISTORY_ID);
+  if (!state.seed_ids.includes(HISTORY_ID)) state.seed_ids.push(HISTORY_ID);
+}
+async function handleUnlock(event) {
+  event.preventDefault();
+  const code = normalizeUnlockCode($("#unlock-code").value);
+  const status = $("#unlock-status");
+  const submit = event.submitter;
+  if (!code) return;
+  submit.disabled = true;
+  submit.textContent = t("unlocking");
+  status.textContent = t("processing_device");
+  try {
+    const incoming = await decryptHistory(code);
+    const restoredDays = countHistoryDays(incoming);
+    mergeHistory(incoming);
+    await persistState();
+    $("#unlock-code").value = "";
+    $("#unlock-dialog").close();
+    renderAll();
+    showToast(t("old_history_restored", { days: restoredDays }));
+  } catch (error) {
+    status.textContent = error?.name === "OperationError" ? t("unlock_wrong") : (error.message || t("unlock_failed"));
+  } finally {
+    submit.disabled = false;
+    submit.textContent = t("unlock");
+  }
+}
+function openUnlockDialog() {
+  if (!$("#unlock-dialog")?.showModal) return;
+  const status = $("#unlock-status");
+  if (status) status.textContent = state.migrations.includes(HISTORY_ID) ? t("old_history_already") : t("unlock_hint");
+  $("#unlock-code").value = "";
+  $("#export-dialog")?.close();
+  requestAnimationFrame(() => $("#unlock-dialog").showModal());
+}
+function offerUnlock() {
+  if (state.migrations.includes(HISTORY_ID) || state.settings.unlock_prompt_dismissed || !$("#unlock-dialog")?.showModal) return;
+  requestAnimationFrame(() => openUnlockDialog());
+}
+function setupVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return;
+  recognition = new SpeechRecognition();
+  recognition.lang = "zh-CN";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onresult = (event) => {
+    let finalText = "";
+    for (let index = event.resultIndex; index < event.results.length; index += 1) if (event.results[index].isFinal) finalText += event.results[index][0].transcript;
+    if (finalText.trim()) {
+      const input = $("#trace-input");
+      input.value = `${input.value}${input.value ? "\n" : ""}${finalText.trim()}`;
+    }
+  };
+  recognition.onend = () => { recognizing = false; $("#voice-button").textContent = t("voice"); };
+}
+function toggleVoice() {
+  if (!recognition) { showToast(t("voice_unsupported")); return; }
+  if (recognizing) { recognition.stop(); return; }
+  recognizing = true;
+  $("#voice-button").textContent = t("stop");
+  recognition.start();
+}
+function bindEvents() {
+  document.querySelectorAll(".mode-tab").forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.mode)));
+  document.querySelectorAll("[data-lang]").forEach((button) => button.addEventListener("click", () => setLanguage(button.dataset.lang)));
+  $("#today-button").addEventListener("click", () => { currentDate = todayKey(); activePrimingId = null; renderAll(); switchMode("observe"); });
+  $("#return-today").addEventListener("click", () => { currentDate = todayKey(); activePrimingId = null; renderAll(); });
+  $("#quick-tags").addEventListener("click", (event) => { const button = event.target.closest("[data-tag]"); if (!button) return; const tag = button.dataset.tag; if (selectedTags.has(tag)) selectedTags.delete(tag); else selectedTags.add(tag); renderQuickTags(); });
+  $("#save-trace").addEventListener("click", saveTrace);
+  $("#clear-trace").addEventListener("click", () => { $("#trace-input").value = ""; selectedTags.clear(); editingTraceId = null; $("#save-trace").textContent = t("save_trace"); renderQuickTags(); });
+  $("#voice-button").addEventListener("click", toggleVoice);
+  $("#today-traces").addEventListener("click", (event) => { const article = event.target.closest("[data-trace-id]"); const action = event.target.closest("[data-action]")?.dataset.action; if (!article || !action) return; if (action === "edit") editTrace(article.dataset.traceId); if (action === "delete") deleteTrace(article.dataset.traceId); });
+  $("#extract-button").addEventListener("click", recomputeExtraction);
+  $("#extraction-fields").addEventListener("input", (event) => { if (event.target.matches("[data-extract-id]")) saveExtractionField(event.target); });
+  $("#new-priming").addEventListener("click", newPriming);
+  $("#generate-action-line").addEventListener("click", generateActionLine);
+  $("#save-priming").addEventListener("click", () => savePriming({ quiet: false }));
+  $("#save-outcome").addEventListener("click", saveOutcome);
+  $("#action-fields").addEventListener("input", () => savePriming({ quiet: true }));
+  $("#priming-input").addEventListener("input", () => savePriming({ quiet: true }));
+  $("#outcome-input").addEventListener("input", () => savePriming({ quiet: true }));
+  document.querySelectorAll(".range-button").forEach((button) => button.addEventListener("click", () => { lensRange = Number(button.dataset.range); document.querySelectorAll(".range-button").forEach((item) => item.classList.toggle("active", item === button)); renderLens(); }));
+  $("#corpus-search").addEventListener("input", renderCorpus);
+  $("#copy-corpus").addEventListener("click", copyCorpus);
+  $("#export-button").addEventListener("click", () => { renderStorageSummary(); renderSyncSettings(); $("#export-dialog").showModal(); });
+  $("#export-markdown").addEventListener("click", markdownExport);
+  $("#export-json").addEventListener("click", jsonExport);
+  $("#import-file").addEventListener("change", (event) => importBackup(event.target.files[0]));
+  $("#save-sync-settings").addEventListener("click", saveSyncSettings);
+  $("#sync-now").addEventListener("click", syncNow);
+  $("#pull-sync").addEventListener("click", safePullSync);
+  $("#push-sync").addEventListener("click", safePushSync);
+  $("#open-unlock").addEventListener("click", openUnlockDialog);
+  document.addEventListener("click", (event) => { const close = event.target.closest("[data-close-dialog]"); if (close) close.closest("dialog").close(); });
+  $("#unlock-form").addEventListener("submit", handleUnlock);
+  $("#unlock-later").addEventListener("click", () => { state.settings.unlock_prompt_dismissed = true; schedulePersist(); $("#unlock-dialog").close(); });
+  window.addEventListener("focus", checkDateRoll);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkDateRoll(); else persistState(); });
+  window.addEventListener("pagehide", () => persistState());
+}
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((registration) => registration.update()).catch(() => {});
+}
+async function init() {
+  state = await loadState();
+  currentLanguage = state.settings.language || currentLanguage;
+  ensureDay(currentDate);
+  setupVoiceInput();
+  bindEvents();
+  renderAll();
+  await persistState();
+  offerUnlock();
+  registerServiceWorker();
+  setInterval(checkDateRoll, 60000);
+}
+init();

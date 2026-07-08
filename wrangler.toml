@@ -1,0 +1,6 @@
+name = "vitality-journal"
+compatibility_date = "2026-07-07"
+pages_build_output_dir = "."
+
+# Configure the KV binding named VITALITY_SYNC in the Cloudflare Pages dashboard.
+# The Pages Function at functions/api/sync/[id].js expects that binding.

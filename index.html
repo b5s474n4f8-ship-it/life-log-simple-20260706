@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#eef4f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Vitality Journal" />
+  <title>Vitality Journal</title>
+  <link rel="icon" href="./icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="stylesheet" href="./styles.css?v=20260708-bilingual" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="brand" id="today-button" type="button" aria-label="Back to today" data-i18n-aria="back_today">
+      <img src="./icon-192.png" alt="" width="36" height="36" />
+      <span>Vitality Journal</span>
+    </button>
+    <nav class="mode-tabs" aria-label="Main workspace" data-i18n-aria="main_workspace">
+      <button class="mode-tab active" type="button" data-mode="observe" data-i18n="tab_observe">Observe</button>
+      <button class="mode-tab" type="button" data-mode="orient" data-i18n="tab_orient">Orient</button>
+      <button class="mode-tab" type="button" data-mode="lens" data-i18n="tab_lens">Lens</button>
+      <button class="mode-tab" type="button" data-mode="corpus" data-i18n="tab_corpus">Corpus</button>
+    </nav>
+    <div class="top-actions" aria-label="Utilities" data-i18n-aria="utilities">
+      <div class="language-toggle" aria-label="Language" data-i18n-aria="language">
+        <button class="lang-button" type="button" data-lang="zh">中文</button>
+        <button class="lang-button" type="button" data-lang="en">EN</button>
+      </div>
+      <button id="export-button" class="utility-button" type="button" data-i18n="keep">Keep</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="mode-panel active" id="observe-panel" data-panel="observe" aria-labelledby="observe-title">
+      <div class="section-heading">
+        <div>
+          <p id="date-meta" class="kicker">Today</p>
+          <h1 id="observe-title" data-i18n="observe_title">Record what wants to be seen</h1>
+        </div>
+        <button id="return-today" class="secondary-button" type="button" hidden data-i18n="today">Today</button>
+      </div>
+
+      <div class="input-surface">
+        <label class="sr-only" for="trace-input" data-i18n="trace_label">Add a LifeLog trace</label>
+        <textarea id="trace-input" rows="4" placeholder="One sentence, one scene, one body signal, one thought. Leave it here first." data-i18n-placeholder="trace_placeholder" spellcheck="true"></textarea>
+        <div class="chip-row" id="quick-tags" aria-label="Optional tags" data-i18n-aria="optional_tags"></div>
+        <div class="input-actions">
+          <button id="save-trace" class="primary-action" type="button" data-i18n="save_trace">Save trace</button>
+          <button id="voice-button" class="secondary-button" type="button" data-i18n="voice">Voice</button>
+          <button id="clear-trace" class="ghost-button" type="button" data-i18n="clear">Clear</button>
+        </div>
+      </div>
+
+      <div class="two-column observe-grid">
+        <section class="panel-block">
+          <div class="panel-heading">
+            <h2 data-i18n="today_section">Today</h2>
+            <span id="trace-count">0 traces</span>
+          </div>
+          <div id="today-traces" class="trace-list"></div>
+        </section>
+
+        <section class="panel-block">
+          <div class="panel-heading">
+            <h2 data-i18n="neutral_extraction">Neutral extraction</h2>
+            <button id="extract-button" class="small-button" type="button" data-i18n="refresh">Refresh</button>
+          </div>
+          <p class="protocol-note" data-i18n="protocol_note">The app observes and organizes. It does not diagnose, rate, or label you.</p>
+          <div id="extraction-fields" class="extraction-fields"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="mode-panel" id="orient-panel" data-panel="orient" aria-labelledby="orient-title">
+      <div class="section-heading">
+        <div>
+          <p class="kicker" data-i18n="tab_orient">Orient</p>
+          <h1 id="orient-title" data-i18n="orient_title">Turn today into an action line</h1>
+        </div>
+        <button id="new-priming" class="secondary-button" type="button" data-i18n="new">New</button>
+      </div>
+
+      <div class="two-column orient-grid">
+        <section class="panel-block input-surface compact">
+          <label class="field-label" for="priming-input" data-i18n="priming_label">Morning or pre-task priming</label>
+          <textarea id="priming-input" rows="8" placeholder="Say the thoughts, plans, and possible resistance in your head." data-i18n-placeholder="priming_placeholder" spellcheck="true"></textarea>
+          <div class="input-actions">
+            <button id="generate-action-line" class="primary-action" type="button" data-i18n="generate_action_line">Generate action line</button>
+            <button id="save-priming" class="secondary-button" type="button" data-i18n="save">Save</button>
+          </div>
+          <div class="recent-signal-box">
+            <h2 data-i18n="recent_signals">Recent signals</h2>
+            <div id="recent-signals"></div>
+          </div>
+        </section>
+
+        <section class="panel-block action-line-panel">
+          <div class="panel-heading">
+            <h2 data-i18n="action_line">Action line</h2>
+            <span id="priming-status">Not generated</span>
+          </div>
+          <div id="action-fields" class="action-fields"></div>
+          <label class="field-label" for="outcome-input" data-i18n="evening_check_label">Two-minute evening check</label>
+          <textarea id="outcome-input" rows="4" placeholder="What actually happened today? Did the action line help?" data-i18n-placeholder="outcome_placeholder" spellcheck="true"></textarea>
+          <button id="save-outcome" class="secondary-button full-width" type="button" data-i18n="save_check">Save check</button>
+        </section>
+      </div>
+    </section>
+
+    <section class="mode-panel" id="lens-panel" data-panel="lens" aria-labelledby="lens-title">
+      <div class="section-heading">
+        <div>
+          <p class="kicker" data-i18n="tab_lens">Lens</p>
+          <h1 id="lens-title" data-i18n="lens_title">Patterns over time</h1>
+        </div>
+        <div class="segmented-control" aria-label="Time range" data-i18n-aria="time_range">
+          <button class="range-button active" type="button" data-range="7" data-i18n="range_7">7 days</button>
+          <button class="range-button" type="button" data-range="30" data-i18n="range_30">30 days</button>
+        </div>
+      </div>
+      <div id="lens-summary" class="metric-grid"></div>
+      <section class="panel-block">
+        <div class="panel-heading"><h2 data-i18n="possible_observations">Possible observations</h2><span id="lens-days"></span></div>
+        <div id="observations" class="observation-list"></div>
+      </section>
+      <section class="panel-block timeline-block">
+        <div class="panel-heading"><h2 data-i18n="recording_rhythm">Recording rhythm</h2><span data-i18n="by_date">by date</span></div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+    </section>
+
+    <section class="mode-panel" id="corpus-panel" data-panel="corpus" aria-labelledby="corpus-title">
+      <div class="section-heading">
+        <div>
+          <p class="kicker" data-i18n="tab_corpus">Corpus</p>
+          <h1 id="corpus-title" data-i18n="corpus_title">Personal corpus</h1>
+        </div>
+        <button id="copy-corpus" class="secondary-button" type="button" data-i18n="copy_corpus">Copy corpus</button>
+      </div>
+      <div class="input-surface compact">
+        <label class="sr-only" for="corpus-search" data-i18n="search_corpus">Search corpus</label>
+        <input id="corpus-search" type="search" placeholder="Search original words, questions, body signals, contexts" data-i18n-placeholder="corpus_placeholder" />
+      </div>
+      <div id="corpus-list" class="corpus-list"></div>
+    </section>
+  </main>
+
+  <dialog id="export-dialog" class="sheet-dialog" aria-labelledby="export-title">
+    <div class="dialog-shell">
+      <header class="dialog-heading">
+        <div><p data-i18n="keep">KEEP</p><h2 id="export-title" data-i18n="backup_sync_title">Backup and sync</h2></div>
+        <button class="close-button" type="button" data-close-dialog aria-label="Close" data-i18n-aria="close">x</button>
+      </header>
+      <p class="dialog-copy" data-i18n="dialog_copy">Your journal stays on this device by default. Cloud sync stores only encrypted data.</p>
+      <div class="export-actions">
+        <button id="export-markdown" class="primary-action" type="button" data-i18n="export_markdown">Export Markdown</button>
+        <button id="export-json" type="button" data-i18n="backup_json">Backup JSON</button>
+        <label class="import-label"><span data-i18n="restore_json">Restore JSON</span><input id="import-file" type="file" accept="application/json,.json" /></label>
+        <button id="open-unlock" type="button" data-i18n="restore_old_history">Restore old history</button>
+      </div>
+      <section class="history-help-box" aria-labelledby="history-help-title">
+        <h2 id="history-help-title" data-i18n="history_help_title">Old history code</h2>
+        <p data-i18n="history_help_copy">Use the old unlock code only for the bundled history package. It is different from cloud Sync ID and Sync passphrase.</p>
+      </section>
+      <section class="sync-box" aria-labelledby="sync-title">
+        <div class="panel-heading"><h2 id="sync-title" data-i18n="encrypted_sync">Encrypted sync</h2><span id="sync-status">Local only</span></div>
+        <label class="field-label" for="sync-id" data-i18n="sync_id">Sync ID</label>
+        <input id="sync-id" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="for example lily-vitality" data-i18n-placeholder="sync_id_placeholder" />
+        <label class="field-label" for="sync-passphrase" data-i18n="sync_passphrase">Sync passphrase</label>
+        <input id="sync-passphrase" type="password" autocomplete="current-password" placeholder="Used only on this device" data-i18n-placeholder="sync_passphrase_placeholder" />
+        <div class="input-actions sync-actions">
+          <button id="save-sync-settings" class="secondary-button" type="button" data-i18n="save_settings">Save settings</button>
+          <button id="sync-now" class="primary-action" type="button" data-i18n="sync_now">Sync now</button>
+          <button id="pull-sync" class="secondary-button" type="button" data-i18n="pull">Pull</button>
+          <button id="push-sync" class="secondary-button" type="button" data-i18n="push">Push</button>
+        </div>
+        <p class="storage-summary" id="sync-help" data-i18n="sync_help">Use the same Sync ID and passphrase on iPhone and computer.</p>
+      </section>
+      <p id="storage-summary" class="storage-summary"></p>
+    </div>
+  </dialog>
+
+  <dialog id="unlock-dialog" class="unlock-dialog" aria-labelledby="unlock-title">
+    <form id="unlock-form" class="unlock-form">
+      <h2 id="unlock-title" data-i18n="restore_old_history">Restore old history</h2>
+      <p data-i18n="unlock_copy">Enter the old unlock code to restore the bundled encrypted history on this device.</p>
+      <label for="unlock-code"><span data-i18n="unlock_code">Unlock code</span><input id="unlock-code" type="password" autocomplete="off" autocapitalize="characters" spellcheck="false" required /></label>
+      <p id="unlock-status" class="unlock-status" role="status" aria-live="polite"></p>
+      <div class="unlock-actions"><button id="unlock-later" type="button" data-i18n="later">Later</button><button class="primary-action" type="submit" data-i18n="unlock">Unlock</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <script src="./app.js?v=20260708-bilingual" defer></script>
+</body>
+</html>
