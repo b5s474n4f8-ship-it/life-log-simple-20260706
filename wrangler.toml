@@ -1,6 +1,14 @@
-name = "vitality-journal"
-compatibility_date = "2026-07-07"
-pages_build_output_dir = "."
+name = "life-log-simple-20260706"
+main = "./worker.js"
+compatibility_date = "2026-07-08"
 
-# Configure the KV binding named VITALITY_SYNC in the Cloudflare Pages dashboard.
-# The Pages Function at functions/api/sync/[id].js expects that binding.
+# Cloudflare Workers Static Assets. The build log error was asking for this block.
+[assets]
+directory = "."
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# Add a KV binding named VITALITY_SYNC in the Cloudflare dashboard.
+# Workers & Pages > your Worker > Settings > Bindings > KV namespace bindings.
+# If deploying only as a Pages project instead, the old functions/api/sync/[id].js file can still be used.
