@@ -11,7 +11,7 @@ run_worker_first = ["/api/*"]
 
 [[kv_namespaces]]
 binding = "VITALITY_SYNC"
-id = "b34e2ead926e44b89b744af1fffdec132"
+id = "b34e2ead926e44b89b744af1ffdec132"
 
 # The KV binding above lets the app retrieve and save synced journal history.
 # If deploying only as a Pages project instead, the old functions/api/sync/[id].js file can still be used.
