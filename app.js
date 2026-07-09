@@ -7,6 +7,8 @@ const HISTORY_URL = "./history-v1.enc.json";
 const HISTORY_ID = "encrypted-history-v1";
 const HISTORY_AAD = new TextEncoder().encode("life-log-history-v1");
 const SYNC_API_BASE = "./api/sync";
+const AI_EXTRACT_API = "./api/extract";
+const AI_PRIME_API = "./api/prime";
 const SYNC_ITERATIONS = 250000;
 
 const LANGUAGE_KEY = "vitality-journal-language";
@@ -31,7 +33,7 @@ const I18N = {
     save_settings: "Save settings", sync_now: "Sync now", pull: "Pull", push: "Push", sync_help: "Use the same Sync ID and passphrase on iPhone and computer.",
     unlock_copy: "Enter the old unlock code to restore the bundled encrypted history on this device.", unlock_code: "Unlock code", later: "Later", unlock: "Unlock", unlocking: "Unlocking",
     date_today: "Today", date_history: "History", trace_count: "{count} trace{plural}", empty_traces: "No traces yet. One sentence is enough.", legacy: "Legacy", lifelog: "LifeLog",
-    extract_placeholder: "Observed signals appear here.", old_history_restored: "Old history restored: {days} days merged.", unlock_wrong: "Unlock code is not correct. Use the old history code, not the cloud sync passphrase.", unlock_hint: "Tip: this code is separate from Sync ID and Sync passphrase.", old_history_already: "Old history is already merged. You can restore again if you want to re-check it.", processing_device: "Processing on this device.", secure_unlock_unsupported: "Secure unlock is not supported in this browser.", history_load_failed: "History package could not be loaded.", unlock_failed: "Unlock failed.", saved_locally: "Saved locally: {dates} days, {traces} traces, {primings} primings.", local_only: "Local only", last_sync: "Last sync {time}", enter_sync_id: "Enter a Sync ID.", passphrase_rule: "Use a sync passphrase with at least 10 characters.", voice_unsupported: "Voice capture is not supported here. Use iPhone dictation in the keyboard."
+    extract_placeholder: "Observed signals appear here.", old_history_restored: "Old history restored: {days} days merged.", unlock_wrong: "Unlock code is not correct. Use the old history code, not the cloud sync passphrase.", unlock_hint: "Tip: this code is separate from Sync ID and Sync passphrase.", old_history_already: "Old history is already merged. You can restore again if you want to re-check it.", processing_device: "Processing on this device.", secure_unlock_unsupported: "Secure unlock is not supported in this browser.", history_load_failed: "History package could not be loaded.", unlock_failed: "Unlock failed.", saved_locally: "Saved locally: {dates} days, {traces} traces, {primings} primings.", local_only: "Local only", last_sync: "Last sync {time}", enter_sync_id: "Enter a Sync ID.", passphrase_rule: "Use a sync passphrase with at least 10 characters.", voice_unsupported: "Voice capture is not supported here. Use iPhone dictation in the keyboard.", ai_sensemake: "AI organize", refresh_local: "Local refresh", ai_status_local: "Local draft", ai_status_done: "AI organized", ai_status_working: "Organizing...", ai_missing_key: "AI key is not configured. Local draft is still available.", ai_unavailable: "AI is unavailable. Local draft is still available.", ai_done_toast: "AI organized the trace. You can edit any field.", ai_empty: "Save one trace before AI organizing.", daily_brief_empty: "No compact observation yet. Save a trace or refresh.", key_points_title: "Key points", signals_title: "Signals", edit_extract_fields: "Edit extraction fields", extraction_method_local: "Local draft", extraction_method_ai: "AI organized", no_recent_signals: "Not enough recent traces yet. This priming will use the current text first.", no_matching_corpus: "No matching corpus item yet.", no_corpus: "No corpus to copy yet.", corpus_copied: "Corpus copied.", clipboard_unavailable: "Clipboard is unavailable. Use export instead.", entry_date: "Record date", backfill_hint: "Backfill any missed day anytime.", ai_generate_action_line: "AI orient", local_action_line: "Local action line", priming_method_ai: "AI oriented", priming_method_local: "Local draft", priming_ai_done_toast: "AI oriented the priming. You can edit any field.", priming_ai_fallback: "AI is unavailable. Local action line is ready.", priming_ai_missing_key: "AI key is not configured. Local action line is ready.", priming_empty: "Write or dictate a short priming first.", date_changed: "Date changed."
   },
   zh: {
     back_today: "回到今天", main_workspace: "主工作区", utilities: "工具", language: "语言",
@@ -53,7 +55,7 @@ const I18N = {
     save_settings: "保存设置", sync_now: "立即同步", pull: "拉取", push: "推送", sync_help: "手机和电脑使用同一个 Sync ID 与同步密语。",
     unlock_copy: "输入旧历史口令，把随 App 打包的加密历史恢复到这台设备。", unlock_code: "旧历史口令", later: "稍后", unlock: "解锁", unlocking: "解锁中",
     date_today: "今天", date_history: "历史", trace_count: "{count} 条记录", empty_traces: "还没有记录。一句话就够。", legacy: "旧历史", lifelog: "生命力日志",
-    extract_placeholder: "观察到的信号会出现在这里。", old_history_restored: "旧历史已恢复：合并了 {days} 天记录。", unlock_wrong: "口令不正确。这里需要旧历史口令，不是云同步密语。", unlock_hint: "提示：这个口令和 Sync ID / 同步密语是分开的。", old_history_already: "旧历史已经合并过。你仍然可以再次恢复来重新检查。", processing_device: "正在本设备处理。", secure_unlock_unsupported: "这个浏览器不支持安全解锁。", history_load_failed: "无法加载历史包。", unlock_failed: "解锁失败。", saved_locally: "本地已保存：{dates} 天，{traces} 条记录，{primings} 条 Priming。", local_only: "仅本地", last_sync: "上次同步 {time}", enter_sync_id: "请输入 Sync ID。", passphrase_rule: "同步密语至少需要 10 个字符。", voice_unsupported: "这里不支持 App 内语音输入。iPhone 上可以用键盘自带听写。"
+    extract_placeholder: "观察到的信号会出现在这里。", old_history_restored: "旧历史已恢复：合并了 {days} 天记录。", unlock_wrong: "口令不正确。这里需要旧历史口令，不是云同步密语。", unlock_hint: "提示：这个口令和 Sync ID / 同步密语是分开的。", old_history_already: "旧历史已经合并过。你仍然可以再次恢复来重新检查。", processing_device: "正在本设备处理。", secure_unlock_unsupported: "这个浏览器不支持安全解锁。", history_load_failed: "无法加载历史包。", unlock_failed: "解锁失败。", saved_locally: "本地已保存：{dates} 天，{traces} 条记录，{primings} 条 Priming。", local_only: "仅本地", last_sync: "上次同步 {time}", enter_sync_id: "请输入 Sync ID。", passphrase_rule: "同步密语至少需要 10 个字符。", voice_unsupported: "这里不支持 App 内语音输入。iPhone 上可以用键盘自带听写。", ai_sensemake: "AI 整理", refresh_local: "本地刷新", ai_status_local: "本地草稿", ai_status_done: "AI 已整理", ai_status_working: "整理中...", ai_missing_key: "还没配置 AI key，已保留本地草稿。", ai_unavailable: "AI 暂时不可用，已保留本地草稿。", ai_done_toast: "AI 已整理，可以继续编辑。", ai_empty: "先保存一条记录，再做 AI 整理。", daily_brief_empty: "还没有压缩观察。保存记录或刷新即可生成。", key_points_title: "要点", signals_title: "信号", edit_extract_fields: "编辑抽取字段", extraction_method_local: "本地草稿", extraction_method_ai: "AI 已整理", no_recent_signals: "近期记录还不够。Priming 会先使用当前文字。", no_matching_corpus: "还没有匹配的语料。", no_corpus: "还没有可复制的语料。", corpus_copied: "语料已复制。", clipboard_unavailable: "剪贴板不可用，请使用导出。", entry_date: "记录日期", backfill_hint: "漏记的日子可以随时回溯补上。", ai_generate_action_line: "AI 定向", local_action_line: "本地行动线", priming_method_ai: "AI 已定向", priming_method_local: "本地草稿", priming_ai_done_toast: "AI 已整理 Priming，可以继续编辑。", priming_ai_fallback: "AI 暂时不可用，已生成本地行动线。", priming_ai_missing_key: "还没配置 AI key，已生成本地行动线。", priming_empty: "先写下或口述一小段 Priming。", date_changed: "日期已切换。"
   }
 };
 function preferredLanguage() { try { return localStorage.getItem(LANGUAGE_KEY) || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"); } catch { return "zh"; } }
@@ -78,6 +80,8 @@ const QUICK_TAGS = [
 ];
 
 const EXTRACTION_DEFS = [
+  { id: "daily_brief", label: "Daily brief", zh: "今日观察" },
+  { id: "key_points", label: "Key points", zh: "压缩要点" },
   { id: "contexts", label: "Contexts", zh: "场景" },
   { id: "events", label: "Events", zh: "事件" },
   { id: "body_signals", label: "Body signals", zh: "身体信号" },
@@ -107,6 +111,16 @@ const CONTEXT_KEYWORDS = {
   Creation: ["write", "article", "create", "corpus", "\u5199", "\u6587\u7ae0", "\u521b\u4f5c", "\u8bed\u6599"],
   English: ["English", "class", "demo", "teaching", "\u82f1\u8bed", "\u8bfe\u5802", "\u8bd5\u8bb2", "\u6559\u5b66"],
   System: ["AI", "app", "system", "sync", "Priming", "LifeLog", "\u7cfb\u7edf", "\u540c\u6b65", "\u5206\u6790"],
+};
+
+const CONTEXT_LABELS = {
+  Work: { en: "Work", zh: "工作" },
+  Relationship: { en: "Relationship", zh: "关系" },
+  Body: { en: "Body", zh: "身体" },
+  Faith: { en: "Faith", zh: "信仰" },
+  Creation: { en: "Creation", zh: "创作" },
+  English: { en: "English", zh: "英语/教学" },
+  System: { en: "System", zh: "系统/AI" }
 };
 
 const BODY_WORDS = ["stomach", "sleep", "tired", "pain", "tense", "body", "\u80c3", "\u80a0\u80c3", "\u5395\u6240", "\u7761\u7720", "\u5931\u7720", "\u7d2f", "\u75bc", "\u7d27\u7ef7", "\u8eab\u4f53"];
@@ -194,7 +208,7 @@ function normalizeTrace(trace) {
 }
 function normalizePriming(session) {
   const now = new Date().toISOString();
-  return { id: session.id || makeId(), created_at: session.created_at || session.createdAt || now, updated_at: session.updated_at || session.updatedAt || now, raw: session.raw || session.rawTranscript || "", action_line: session.action_line || cardsToActionLine(session.cards) || emptyActionLine(), outcome: session.outcome || "" };
+  return { id: session.id || makeId(), created_at: session.created_at || session.createdAt || now, updated_at: session.updated_at || session.updatedAt || now, raw: session.raw || session.rawTranscript || "", action_line: session.action_line || cardsToActionLine(session.cards) || emptyActionLine(), action_method: session.action_method || session.method || "", outcome: session.outcome || "" };
 }
 function migrateLegacyState(value) {
   const next = createEmptyState();
@@ -297,10 +311,16 @@ function switchMode(mode) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function renderAll() {
-  renderQuickTags(); renderObserve(); renderOrient(); renderLens(); renderCorpus(); renderSyncSettings(); renderStorageSummary(); applyI18n();
+  renderDateControl(); renderQuickTags(); renderObserve(); renderOrient(); renderLens(); renderCorpus(); renderSyncSettings(); renderStorageSummary(); applyI18n();
 }
 function renderQuickTags() {
   $("#quick-tags").innerHTML = QUICK_TAGS.map((tag) => `<button class="tag-chip ${selectedTags.has(tag.id) ? "active" : ""}" type="button" data-tag="${tag.id}">${labelFor(tag)}</button>`).join("");
+}
+function renderDateControl() {
+  const input = $("#entry-date");
+  if (!input) return;
+  input.max = todayKey();
+  if (input.value !== currentDate) input.value = currentDate;
 }
 function renderObserve() {
   const day = ensureDay(currentDate);
@@ -329,39 +349,105 @@ function renderTodayTraces(day) {
 }
 function renderExtraction(day) {
   if (!day.extraction) day.extraction = buildExtraction(day);
-  const fields = day.extraction.fields || emptyExtractionFields();
-  $("#extraction-fields").innerHTML = EXTRACTION_DEFS.map((def) => `
-    <div class="extract-field">
-      <label for="extract-${def.id}">${labelFor(def)}</label>
-      <textarea id="extract-${def.id}" data-extract-id="${def.id}" rows="3" placeholder="${t("extract_placeholder")}">${escapeHtml(formatFieldValue(fields[def.id]))}</textarea>
-    </div>`).join("");
+  const fields = getExtractionFields(day);
+  const method = day.extraction?.method === "ai" ? "ai" : "local";
+  if ($("#ai-status")) $("#ai-status").textContent = method === "ai" ? t("ai_status_done") : t("ai_status_local");
+  const brief = firstFieldValue(fields.daily_brief) || t("daily_brief_empty");
+  const keyPoints = (fields.key_points || []).slice(0, 5);
+  const signalChips = [
+    ...(fields.contexts || []).slice(0, 4),
+    ...(fields.body_signals || []).slice(0, 3),
+    ...(fields.emotion_words || []).slice(0, 3)
+  ];
+  const detailDefs = EXTRACTION_DEFS.filter((def) => !["daily_brief", "key_points"].includes(def.id));
+  $("#extraction-fields").innerHTML = `
+    <section class="extraction-brief ${method === "ai" ? "ai" : "local"}">
+      <div class="brief-meta"><span>${method === "ai" ? t("extraction_method_ai") : t("extraction_method_local")}</span><span>${day.extraction?.updated_at ? formatDateTime(day.extraction.updated_at) : ""}</span></div>
+      <p class="brief-text">${escapeHtml(brief)}</p>
+      ${keyPoints.length ? `<div class="brief-list"><h3>${t("key_points_title")}</h3><ul>${keyPoints.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>` : ""}
+      ${signalChips.length ? `<div class="signal-chip-row" aria-label="${t("signals_title")}">${signalChips.map((item) => `<span>${escapeHtml(item)}</span>`).join("")}</div>` : ""}
+    </section>
+    <details class="extract-details">
+      <summary>${t("edit_extract_fields")}</summary>
+      <div class="extract-detail-grid">
+        ${detailDefs.map((def) => `
+          <div class="extract-field">
+            <label for="extract-${def.id}">${labelFor(def)}</label>
+            <textarea id="extract-${def.id}" data-extract-id="${def.id}" rows="3" placeholder="${t("extract_placeholder")}">${escapeHtml(formatFieldValue(fields[def.id]))}</textarea>
+          </div>`).join("")}
+      </div>
+    </details>`;
 }
 function emptyExtractionFields() { return Object.fromEntries(EXTRACTION_DEFS.map((def) => [def.id, []])); }
-function buildExtraction(day) { return { updated_at: new Date().toISOString(), fields: extractFieldsFromDay(day) }; }
+function normalizeExtractionFields(fields = {}) {
+  const next = emptyExtractionFields();
+  EXTRACTION_DEFS.forEach((def) => {
+    const value = fields?.[def.id];
+    next[def.id] = Array.isArray(value) ? value.map((item) => String(item || "").trim()).filter(Boolean) : value ? [String(value).trim()].filter(Boolean) : [];
+  });
+  return next;
+}
+function normalizeExtractionRecord(extraction) {
+  return { updated_at: extraction?.updated_at || new Date().toISOString(), method: extraction?.method || "local", language: extraction?.language || currentLanguage, model: extraction?.model || "", fields: normalizeExtractionFields(extraction?.fields || extraction || {}) };
+}
+function buildExtraction(day) { return { updated_at: new Date().toISOString(), method: "local", language: currentLanguage, fields: extractFieldsFromDay(day) }; }
 function extractFieldsFromDay(day) {
   const traces = day.traces || [];
   const text = traces.map((trace) => trace.text).join("\n");
   const sentences = splitSentences(text);
   const contexts = new Set();
   traces.forEach((trace) => (trace.tags || []).forEach((tag) => contexts.add(tagLabel(tag))));
-  Object.entries(CONTEXT_KEYWORDS).forEach(([context, words]) => { if (words.some((word) => text.toLowerCase().includes(word.toLowerCase()))) contexts.add(context); });
-  const bodySignals = pickWords(text, BODY_WORDS);
-  const emotionWords = pickWords(text, EMOTION_WORDS);
-  const lifeGiving = sentences.filter((sentence) => hasAny(sentence, LIFE_GIVING_WORDS)).slice(0, 6);
-  const draining = sentences.filter((sentence) => hasAny(sentence, DRAINING_WORDS)).slice(0, 6);
-  const questions = sentences.filter((sentence) => /[?？]|how|why|whether|should|怎么办|如何|为什么|要不要/.test(sentence)).slice(0, 8);
-  const events = sentences.filter((sentence) => sentence.length >= 8 && !questions.includes(sentence)).slice(0, 6);
-  const phrases = sentences.filter((sentence) => sentence.length >= 10 && sentence.length <= 100).slice(0, 10);
+  Object.entries(CONTEXT_KEYWORDS).forEach(([context, words]) => { if (words.some((word) => text.toLowerCase().includes(word.toLowerCase()))) contexts.add(contextLabel(context)); });
+  const contextList = [...contexts].slice(0, 8);
+  const bodySignals = pickWords(text, BODY_WORDS).map(localSignalLabel);
+  const emotionWords = pickWords(text, EMOTION_WORDS).map(localSignalLabel);
+  const lifeGiving = compressLocalItems(sentences.filter((sentence) => hasAny(sentence, LIFE_GIVING_WORDS)), 3);
+  const draining = compressLocalItems(sentences.filter((sentence) => hasAny(sentence, DRAINING_WORDS)), 3);
+  const questions = compressLocalItems(sentences.filter((sentence) => /[?？]|how|why|whether|should|怎么办|如何|为什么|要不要/.test(sentence)), 3);
+  const events = buildLocalEventSummaries(sentences, questions, contextList);
+  const phrases = sentences.filter((sentence) => sentence.length >= 10 && sentence.length <= 120).slice(0, 5);
   const energySignal = describeEnergySignal({ lifeGiving, draining, bodySignals, text });
-  return { contexts: [...contexts].slice(0, 10), events, body_signals: bodySignals, energy_signal: energySignal ? [energySignal] : [], emotion_words: emotionWords, life_giving_moments: lifeGiving, draining_moments: draining, questions, user_phrases: phrases };
+  const dailyBrief = buildLocalDailyBrief({ contextList, bodySignals, emotionWords, text });
+  const keyPoints = buildLocalKeyPoints({ contextList, bodySignals, emotionWords, events, questions });
+  return { daily_brief: dailyBrief ? [dailyBrief] : [], key_points: keyPoints, contexts: contextList, events, body_signals: bodySignals, energy_signal: energySignal ? [energySignal] : [], emotion_words: emotionWords, life_giving_moments: lifeGiving, draining_moments: draining, questions, user_phrases: phrases };
+}
+function contextLabel(context) { return CONTEXT_LABELS[context]?.[currentLanguage] || context; }
+function localSignalLabel(value) { return currentLanguage === "zh" ? ({ calm: "平静", grateful: "感恩", clear: "清楚", anxious: "焦虑", tense: "紧张", low: "低落", stuck: "卡住", stomach: "胃/肠胃", sleep: "睡眠", tired: "疲惫", pain: "疼痛", body: "身体" }[value] || value) : value; }
+function firstFieldValue(value) { return Array.isArray(value) ? (value[0] || "") : (value || ""); }
+function compressLocalItems(items, limit) { return [...new Set(items.map((item) => trimSentence(item, currentLanguage === "zh" ? 88 : 150)).filter(Boolean))].slice(0, limit); }
+function buildLocalEventSummaries(sentences, questions, contexts) {
+  const questionSet = new Set(questions);
+  const candidates = sentences.filter((sentence) => sentence.length >= 8 && !questionSet.has(sentence)).slice(0, 5);
+  return candidates.map((sentence) => {
+    const trimmed = trimSentence(sentence, currentLanguage === "zh" ? 82 : 140);
+    if (trimmed.length < (currentLanguage === "zh" ? 64 : 110)) return trimmed;
+    const anchor = contexts[0] || (currentLanguage === "zh" ? "当下经历" : "the current situation");
+    return currentLanguage === "zh" ? `一段关于${anchor}的较长记录，原文已保留。` : `A longer note around ${anchor}; the original wording is preserved.`;
+  });
+}
+function buildLocalDailyBrief({ contextList, bodySignals, emotionWords, text }) {
+  if (!text.trim()) return "";
+  const contexts = contextList.length ? contextList.slice(0, 3).join("、") : (currentLanguage === "zh" ? "当下经历" : "the current situation");
+  const signals = [...bodySignals.slice(0, 2), ...emotionWords.slice(0, 2)];
+  if (currentLanguage === "zh") return signals.length ? `本地整理显示：记录主要围绕${contexts}展开，同时出现了${signals.join("、")}等信号。原文已完整保留。` : `本地整理显示：记录主要围绕${contexts}展开。原文已完整保留。`;
+  return signals.length ? `Local draft: the record mainly circles ${contexts}, with signals such as ${signals.join(", ")}. The original wording is preserved.` : `Local draft: the record mainly circles ${contexts}. The original wording is preserved.`;
+}
+function buildLocalKeyPoints({ contextList, bodySignals, emotionWords, events, questions }) {
+  const points = [];
+  if (contextList.length) points.push(currentLanguage === "zh" ? `出现的主要场景：${contextList.slice(0, 4).join("、")}。` : `Visible contexts: ${contextList.slice(0, 4).join(", ")}.`);
+  if (events.length) points.push(currentLanguage === "zh" ? `记录里有 ${events.length} 条可继续整理的事件线索。` : `${events.length} event thread(s) are visible for later review.`);
+  if (bodySignals.length) points.push(currentLanguage === "zh" ? `身体信号被明确提到：${bodySignals.slice(0, 3).join("、")}。` : `Body signals explicitly mentioned: ${bodySignals.slice(0, 3).join(", ")}.`);
+  if (emotionWords.length) points.push(currentLanguage === "zh" ? `保留的情绪词：${emotionWords.slice(0, 3).join("、")}。` : `Emotion words kept as user's words: ${emotionWords.slice(0, 3).join(", ")}.`);
+  if (questions.length) points.push(currentLanguage === "zh" ? `留下了 ${questions.length} 个可以回看的问题。` : `${questions.length} question(s) were left for later review.`);
+  return points.slice(0, 5);
 }
 function describeEnergySignal({ lifeGiving, draining, bodySignals, text }) {
   if (!text.trim()) return "";
   const parts = [];
-  if (lifeGiving.length) parts.push("Records show moments that may feel clarifying or life-giving");
-  if (draining.length) parts.push("Records also include stuck, tense, or draining fragments");
-  if (bodySignals.length) parts.push("Body signals were explicitly mentioned");
-  return parts.length ? `${parts.join("; ")}.` : "Records mainly preserve facts and thoughts; no repeated signal is visible yet.";
+  if (lifeGiving.length) parts.push(currentLanguage === "zh" ? "记录中出现让人更清楚或展开的片段" : "records show moments that may feel clarifying or life-giving");
+  if (draining.length) parts.push(currentLanguage === "zh" ? "也出现卡住、紧张或消耗性的片段" : "records also include stuck, tense, or draining fragments");
+  if (bodySignals.length) parts.push(currentLanguage === "zh" ? "身体信号被明确提到" : "body signals were explicitly mentioned");
+  return parts.length ? (currentLanguage === "zh" ? `记录显示：${parts.join("；")}。` : `Records show: ${parts.join("; ")}.`) : (currentLanguage === "zh" ? "记录主要保留事实和想法，暂时还看不出反复信号。" : "Records mainly preserve facts and thoughts; no repeated signal is visible yet.");
 }
 function saveTrace() {
   const input = $("#trace-input");
@@ -404,8 +490,40 @@ function deleteTrace(traceId) {
 function recomputeExtraction() {
   const day = ensureDay(currentDate);
   day.extraction = buildExtraction(day);
-  renderExtraction(day); schedulePersist();
-  showToast(currentLanguage === "zh" ? "抽取已刷新，原始记录没有改变。" : "Extraction refreshed. Original traces are unchanged.");
+  renderExtraction(day); renderLens(); renderCorpus(); schedulePersist();
+  showToast(currentLanguage === "zh" ? "本地抽取已刷新，原始记录没有改变。" : "Local extraction refreshed. Original traces are unchanged.");
+}
+async function generateAiExtraction() {
+  const day = ensureDay(currentDate);
+  if (!day.traces.length) { showToast(t("ai_empty")); return; }
+  const button = $("#ai-extract-button");
+  const status = $("#ai-status");
+  if (button) button.disabled = true;
+  if (status) status.textContent = t("ai_status_working");
+  try {
+    const response = await fetch(AI_EXTRACT_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: currentDate, language: currentLanguage, traces: day.traces.map((trace) => ({ created_at: trace.created_at, text: trace.text, tags: trace.tags || [] })) })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (!day.extraction) day.extraction = buildExtraction(day);
+      renderExtraction(day);
+      showToast(payload.code === "missing_openai_key" ? t("ai_missing_key") : (payload.error || t("ai_unavailable")));
+      return;
+    }
+    day.extraction = normalizeExtractionRecord(payload.extraction);
+    day.metadata.updated_at = new Date().toISOString();
+    renderExtraction(day); renderLens(); renderCorpus(); schedulePersist();
+    showToast(t("ai_done_toast"));
+  } catch (error) {
+    if (!day.extraction) day.extraction = buildExtraction(day);
+    renderExtraction(day);
+    showToast(t("ai_unavailable"));
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 function saveExtractionField(target) {
   const day = ensureDay(currentDate);
@@ -426,13 +544,14 @@ function ensureActivePriming() {
 }
 function createPriming() {
   const now = new Date().toISOString();
-  return { id: makeId(), created_at: now, updated_at: now, raw: "", action_line: emptyActionLine(), outcome: "" };
+  return { id: makeId(), created_at: now, updated_at: now, raw: "", action_line: emptyActionLine(), action_method: "", outcome: "" };
 }
 function renderOrient() {
   const session = ensureActivePriming();
   $("#priming-input").value = session.raw || "";
   $("#outcome-input").value = session.outcome || "";
-  $("#priming-status").textContent = session.action_line?.mainline ? `${t("generated")} · ${formatDateTime(session.updated_at)}` : t("not_generated");
+  const method = session.action_method === "ai" ? t("priming_method_ai") : session.action_method === "local" ? t("priming_method_local") : t("generated");
+  $("#priming-status").textContent = session.action_line?.mainline ? `${method} · ${formatDateTime(session.updated_at)}` : t("not_generated");
   renderActionFields(session.action_line || emptyActionLine());
   renderRecentSignals();
 }
@@ -466,18 +585,48 @@ function savePriming({ quiet = false } = {}) {
   schedulePersist();
   if (!quiet) showToast(currentLanguage === "zh" ? "Priming 已保存。" : "Priming saved.");
 }
-function generateActionLine() {
+async function generateActionLine() {
   const raw = $("#priming-input").value.trim();
-  if (!raw) { showToast(currentLanguage === "zh" ? "先写下或口述一小段 Priming。" : "Write or dictate a short priming first."); return; }
-  const actionLine = localGenerateActionLine(raw, buildRecentSignals(7));
+  if (!raw) { showToast(t("priming_empty")); return; }
+  const button = $("#generate-action-line");
+  const recent = buildRecentSignals(7);
+  const localActionLine = localGenerateActionLine(raw, recent);
+  if (button) button.disabled = true;
+  $("#priming-status").textContent = t("ai_status_working");
+  try {
+    const response = await fetch(AI_PRIME_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: currentDate, language: currentLanguage, raw, recent })
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      applyActionLine(localActionLine, "local");
+      showToast(payload.code === "missing_openai_key" ? t("priming_ai_missing_key") : t("priming_ai_fallback"));
+      return;
+    }
+    applyActionLine(normalizeActionLineFields(payload.action_line), "ai", payload.updated_at);
+    showToast(t("priming_ai_done_toast"));
+  } catch (error) {
+    applyActionLine(localActionLine, "local");
+    showToast(t("priming_ai_fallback"));
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+function applyActionLine(actionLine, method = "local", updatedAt = new Date().toISOString()) {
   const session = ensureActivePriming();
-  session.raw = raw;
-  session.action_line = actionLine;
-  session.updated_at = new Date().toISOString();
-  renderActionFields(actionLine);
-  $("#priming-status").textContent = `${t("generated")} · ${formatDateTime(session.updated_at)}`;
-  schedulePersist();
-  showToast(currentLanguage === "zh" ? "行动线已生成，可以继续编辑。" : "Action line generated. You can edit any field.");
+  session.raw = $("#priming-input").value.trim();
+  session.action_line = normalizeActionLineFields(actionLine);
+  session.action_method = method;
+  session.updated_at = updatedAt || new Date().toISOString();
+  ensureDay(currentDate).metadata.updated_at = session.updated_at;
+  renderActionFields(session.action_line);
+  $("#priming-status").textContent = `${method === "ai" ? t("priming_method_ai") : t("priming_method_local")} · ${formatDateTime(session.updated_at)}`;
+  renderLens(); renderCorpus(); schedulePersist();
+}
+function normalizeActionLineFields(actionLine = {}) {
+  return Object.fromEntries(ACTION_DEFS.map((def) => [def.id, String(actionLine?.[def.id] || "").trim()]));
 }
 function saveOutcome() { savePriming({ quiet: true }); showToast(currentLanguage === "zh" ? "晚间回看已保存。" : "Evening check saved."); }
 function localGenerateActionLine(raw, recent) {
@@ -485,20 +634,28 @@ function localGenerateActionLine(raw, recent) {
   const taskSentences = sentences.filter((s) => /today|need|plan|finish|write|reply|do|complete|output|今天|需要|计划|完成|写|处理|推进|输出|复盘/.test(s)).slice(0, 5);
   const resistance = findSentence(sentences, /resistance|stuck|worry|delay|tired|anxious|阻力|卡|担心|拖延|累|焦虑|紧张/) || recent.resistanceHint;
   const firstAction = findSentence(sentences, /first|start|open|15|第一步|先|开始|打开/) || buildFirstAction(taskSentences[0]);
-  const finish = findSentence(sentences, /finish|done|standard|complete|完成|结束|产出|做到/) || "Leave one saved result, or write where today actually landed.";
-  const mainline = findSentence(sentences, /main|important|today|主线|最重要|重点|今天/) || taskSentences[0] || "Narrow today to one line that can be started.";
-  const notToday = taskSentences.length > 3 ? "Not all branches need to be opened today. Keep the top 1-3." : "No need to solve every later question before starting.";
-  return { mainline: `You mentioned this possible main line: ${trimSentence(mainline, 90)}`, top_tasks: formatList(taskSentences.length ? taskSentences.slice(0, 3) : ["Choose the one thing that most needs movement today"]), first_action: firstAction, possible_resistance: resistance || "No clear resistance word is visible yet. Add one sentence if helpful: where might I stop?", if_resistance: resistance ? `If this appears: ${trimSentence(resistance, 60)}, shrink the next step to 15 minutes.` : "If things get vague, write one sentence: what is the visible next step?", not_today: notToday, finish_standard: finish };
+  const finish = findSentence(sentences, /finish|done|standard|complete|完成|结束|产出|做到/) || (currentLanguage === "zh" ? "留下一个可见结果，或写下今天实际走到了哪里。" : "Leave one saved result, or write where today actually landed.");
+  const mainline = findSentence(sentences, /main|important|today|主线|最重要|重点|今天/) || taskSentences[0] || (currentLanguage === "zh" ? "把今天先收束到一条可以开始的主线。" : "Narrow today to one line that can be started.");
+  const notToday = taskSentences.length > 3 ? (currentLanguage === "zh" ? "今天不需要同时打开所有分支，先保留最重要的 1-3 件。" : "Not all branches need to be opened today. Keep the top 1-3.") : (currentLanguage === "zh" ? "开始前不需要先解决所有后续问题。" : "No need to solve every later question before starting.");
+  return {
+    mainline: currentLanguage === "zh" ? `你提到的一条可能主线：${trimSentence(mainline, 90)}` : `You mentioned this possible main line: ${trimSentence(mainline, 90)}`,
+    top_tasks: formatList(taskSentences.length ? taskSentences.slice(0, 3) : [currentLanguage === "zh" ? "选出今天最需要被推进的一件事" : "Choose the one thing that most needs movement today"]),
+    first_action: firstAction,
+    possible_resistance: resistance || (currentLanguage === "zh" ? "还没有看到明确阻力。可以补一句：我可能会在哪里停住？" : "No clear resistance word is visible yet. Add one sentence if helpful: where might I stop?"),
+    if_resistance: resistance ? (currentLanguage === "zh" ? `如果这里出现阻力：${trimSentence(resistance, 60)}，把下一步缩到 15 分钟。` : `If this appears: ${trimSentence(resistance, 60)}, shrink the next step to 15 minutes.`) : (currentLanguage === "zh" ? "如果开始变模糊，就写一句：现在可见的下一步是什么？" : "If things get vague, write one sentence: what is the visible next step?"),
+    not_today: notToday,
+    finish_standard: finish
+  };
 }
-function buildFirstAction(task) { return task ? `Do 15 minutes first: ${trimSentence(task, 70)}` : "Do a 15-minute version. The goal is to start, not finish everything."; }
+function buildFirstAction(task) { return task ? (currentLanguage === "zh" ? `先做 15 分钟：${trimSentence(task, 70)}` : `Do 15 minutes first: ${trimSentence(task, 70)}`) : (currentLanguage === "zh" ? "先做一个 15 分钟版本。目标是开始，不是一次做完。" : "Do a 15-minute version. The goal is to start, not finish everything."); }
 function renderRecentSignals() {
   const recent = buildRecentSignals(7);
   const items = [];
-  if (recent.contexts.length) items.push(`Recent contexts: ${recent.contexts.slice(0, 4).join(", ")}.`);
-  if (recent.body.length) items.push(`Body signals mentioned: ${recent.body.slice(0, 4).join(", ")}.`);
-  if (recent.resistanceHint) items.push(`A recent resistance fragment: ${trimSentence(recent.resistanceHint, 80)}.`);
-  if (recent.lifeGiving.length) items.push(`A recent life-giving fragment: ${trimSentence(recent.lifeGiving[0], 80)}.`);
-  $("#recent-signals").innerHTML = items.length ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : `<p class="empty-state">Not enough recent traces yet. This priming will use the current text first.</p>`;
+  if (recent.contexts.length) items.push(currentLanguage === "zh" ? `近期场景：${recent.contexts.slice(0, 4).join("、")}。` : `Recent contexts: ${recent.contexts.slice(0, 4).join(", ")}.`);
+  if (recent.body.length) items.push(currentLanguage === "zh" ? `提到的身体信号：${recent.body.slice(0, 4).join("、")}。` : `Body signals mentioned: ${recent.body.slice(0, 4).join(", ")}.`);
+  if (recent.resistanceHint) items.push(currentLanguage === "zh" ? `近期一个阻力片段：${trimSentence(recent.resistanceHint, 80)}。` : `A recent resistance fragment: ${trimSentence(recent.resistanceHint, 80)}.`);
+  if (recent.lifeGiving.length) items.push(currentLanguage === "zh" ? `近期一个展开片段：${trimSentence(recent.lifeGiving[0], 80)}。` : `A recent life-giving fragment: ${trimSentence(recent.lifeGiving[0], 80)}.`);
+  $("#recent-signals").innerHTML = items.length ? `<ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : `<p class="empty-state">${t("no_recent_signals")}</p>`;
 }
 function buildRecentSignals(daysBack) {
   const days = daysInRange(daysBack);
@@ -510,8 +667,13 @@ function renderLens() {
   const traceCount = activeDays.reduce((sum, day) => sum + day.traces.length, 0);
   const primingCount = activeDays.reduce((sum, day) => sum + day.primings.length, 0);
   const phraseCount = activeDays.reduce((sum, day) => sum + (getExtractionFields(day).user_phrases || []).length, 0);
-  $("#lens-summary").innerHTML = [metric("Recorded days", activeDays.length, `${lensRange} day window`), metric("Raw traces", traceCount, "original text preserved"), metric("Action lines", primingCount, "saved priming sessions"), metric("Corpus items", phraseCount, "phrases and questions")].join("");
-  $("#lens-days").textContent = `${lensRange} days`;
+  $("#lens-summary").innerHTML = [
+    metric(currentLanguage === "zh" ? "记录天数" : "Recorded days", activeDays.length, currentLanguage === "zh" ? `${lensRange} 天窗口` : `${lensRange} day window`),
+    metric(currentLanguage === "zh" ? "原始记录" : "Raw traces", traceCount, currentLanguage === "zh" ? "原文完整保留" : "original text preserved"),
+    metric(currentLanguage === "zh" ? "行动线" : "Action lines", primingCount, currentLanguage === "zh" ? "已保存 Priming" : "saved priming sessions"),
+    metric(currentLanguage === "zh" ? "语料条目" : "Corpus items", phraseCount, currentLanguage === "zh" ? "原话与问题" : "phrases and questions")
+  ].join("");
+  $("#lens-days").textContent = currentLanguage === "zh" ? `${lensRange} 天` : `${lensRange} days`;
   renderObservations(activeDays);
   renderTimeline(lensRange);
 }
@@ -524,12 +686,12 @@ function renderObservations(days) {
   const lifeGiving = fields.flatMap((field) => field.life_giving_moments || []);
   const draining = fields.flatMap((field) => field.draining_moments || []);
   const observations = [];
-  if (contexts.length) observations.push(`Records show these recurring contexts: ${contexts.join(", ")}.`);
-  if (body.length) observations.push(`Body signals mentioned more than once include: ${body.join(", ")}.`);
-  if (emotions.length) observations.push(`Emotion words you used include: ${emotions.join(", ")}. These are kept as your words, not labels.`);
-  if (lifeGiving.length) observations.push(`One life-giving fragment: ${trimSentence(lifeGiving[0], 100)}.`);
-  if (draining.length) observations.push(`One draining or stuck fragment: ${trimSentence(draining[0], 100)}.`);
-  if (!observations.length) observations.push("There are not enough traces yet. Keep recording; patterns will become visible over time.");
+  if (contexts.length) observations.push(currentLanguage === "zh" ? `记录显示这些场景反复出现：${contexts.join("、")}。` : `Records show these recurring contexts: ${contexts.join(", ")}.`);
+  if (body.length) observations.push(currentLanguage === "zh" ? `多次提到的身体信号包括：${body.join("、")}。` : `Body signals mentioned more than once include: ${body.join(", ")}.`);
+  if (emotions.length) observations.push(currentLanguage === "zh" ? `你使用过的情绪词包括：${emotions.join("、")}。这些作为原词保留，不作为标签。` : `Emotion words you used include: ${emotions.join(", ")}. These are kept as your words, not labels.`);
+  if (lifeGiving.length) observations.push(currentLanguage === "zh" ? `一个让人展开的片段：${trimSentence(lifeGiving[0], 100)}。` : `One life-giving fragment: ${trimSentence(lifeGiving[0], 100)}.`);
+  if (draining.length) observations.push(currentLanguage === "zh" ? `一个消耗或卡住的片段：${trimSentence(draining[0], 100)}。` : `One draining or stuck fragment: ${trimSentence(draining[0], 100)}.`);
+  if (!observations.length) observations.push(currentLanguage === "zh" ? "记录还不够多。继续留下一点点材料，模式会慢慢变得可见。" : "There are not enough traces yet. Keep recording; patterns will become visible over time.");
   $("#observations").innerHTML = `<ul>${observations.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 function renderTimeline(daysBack) {
@@ -540,7 +702,7 @@ function renderTimeline(daysBack) {
 function renderCorpus() {
   const query = $("#corpus-search")?.value?.trim().toLowerCase() || "";
   const items = buildCorpusItems().filter((item) => !query || `${item.text} ${item.kind} ${item.date}`.toLowerCase().includes(query)).slice(0, 80);
-  $("#corpus-list").innerHTML = items.length ? items.map((item) => `<article class="corpus-item"><header><span>${escapeHtml(item.date)} · <span class="corpus-kind">${escapeHtml(item.kind)}</span></span><span>${escapeHtml(item.source)}</span></header><p>${escapeHtml(item.text)}</p></article>`).join("") : `<p class="empty-state">No matching corpus item yet.</p>`;
+  $("#corpus-list").innerHTML = items.length ? items.map((item) => `<article class="corpus-item"><header><span>${escapeHtml(item.date)} · <span class="corpus-kind">${escapeHtml(item.kind)}</span></span><span>${escapeHtml(item.source)}</span></header><p>${escapeHtml(item.text)}</p></article>`).join("") : `<p class="empty-state">${t("no_matching_corpus")}</p>`;
 }
 function buildCorpusItems() {
   const items = [];
@@ -560,10 +722,10 @@ function buildCorpusItems() {
 }
 function copyCorpus() {
   const text = buildCorpusItems().map((item) => `## ${item.date} · ${item.kind}\n${item.text}`).join("\n\n");
-  if (!text.trim()) { showToast("No corpus to copy yet."); return; }
-  navigator.clipboard?.writeText(text).then(() => showToast("Corpus copied."), () => showToast("Clipboard is unavailable. Use export instead."));
+  if (!text.trim()) { showToast(t("no_corpus")); return; }
+  navigator.clipboard?.writeText(text).then(() => showToast(t("corpus_copied")), () => showToast(t("clipboard_unavailable")));
 }
-function getExtractionFields(day) { if (!day.extraction) day.extraction = buildExtraction(day); return day.extraction.fields || emptyExtractionFields(); }
+function getExtractionFields(day) { if (!day.extraction) day.extraction = buildExtraction(day); day.extraction = normalizeExtractionRecord(day.extraction); return day.extraction.fields; }
 function daysInRange(daysBack) { const start = new Date(); start.setDate(start.getDate() - daysBack + 1); start.setHours(0, 0, 0, 0); return recordedDates().map((date) => state.days[date]).filter((day) => dateFromKey(day.date) >= start).sort((a, b) => a.date.localeCompare(b.date)); }
 function countValues(values) { const counts = new Map(); values.filter(Boolean).forEach((value) => counts.set(value, (counts.get(value) || 0) + 1)); return counts; }
 function topKeys(map) { return [...map.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], locale())).map(([key]) => key); }
@@ -703,9 +865,15 @@ function mergeIncomingState(incoming) {
     const day = ensureDay(date);
     mergeById(day.traces, incomingDay.traces || []);
     mergeById(day.primings, incomingDay.primings || []);
-    day.extraction = buildExtraction(day);
+    day.extraction = newerExtraction(day.extraction, incomingDay.extraction) || buildExtraction(day);
     day.metadata.updated_at = new Date().toISOString();
   });
+}
+function newerExtraction(current, incoming) {
+  if (!current && !incoming) return null;
+  if (!current) return normalizeExtractionRecord(incoming);
+  if (!incoming) return normalizeExtractionRecord(current);
+  return new Date(incoming.updated_at || 0) > new Date(current.updated_at || 0) ? normalizeExtractionRecord(incoming) : normalizeExtractionRecord(current);
 }
 function mergeById(target, incoming) {
   const index = new Map(target.map((item, position) => [item.id, position]));
@@ -864,12 +1032,14 @@ function bindEvents() {
   document.querySelectorAll("[data-lang]").forEach((button) => button.addEventListener("click", () => setLanguage(button.dataset.lang)));
   $("#today-button").addEventListener("click", () => { currentDate = todayKey(); activePrimingId = null; renderAll(); switchMode("observe"); });
   $("#return-today").addEventListener("click", () => { currentDate = todayKey(); activePrimingId = null; renderAll(); });
+  $("#entry-date").addEventListener("change", () => { const value = $("#entry-date").value; if (/^\d{4}-\d{2}-\d{2}$/.test(value)) { currentDate = value; activePrimingId = null; ensureDay(currentDate); renderAll(); showToast(t("date_changed")); } });
   $("#quick-tags").addEventListener("click", (event) => { const button = event.target.closest("[data-tag]"); if (!button) return; const tag = button.dataset.tag; if (selectedTags.has(tag)) selectedTags.delete(tag); else selectedTags.add(tag); renderQuickTags(); });
   $("#save-trace").addEventListener("click", saveTrace);
   $("#clear-trace").addEventListener("click", () => { $("#trace-input").value = ""; selectedTags.clear(); editingTraceId = null; $("#save-trace").textContent = t("save_trace"); renderQuickTags(); });
   $("#voice-button").addEventListener("click", toggleVoice);
   $("#today-traces").addEventListener("click", (event) => { const article = event.target.closest("[data-trace-id]"); const action = event.target.closest("[data-action]")?.dataset.action; if (!article || !action) return; if (action === "edit") editTrace(article.dataset.traceId); if (action === "delete") deleteTrace(article.dataset.traceId); });
   $("#extract-button").addEventListener("click", recomputeExtraction);
+  $("#ai-extract-button").addEventListener("click", generateAiExtraction);
   $("#extraction-fields").addEventListener("input", (event) => { if (event.target.matches("[data-extract-id]")) saveExtractionField(event.target); });
   $("#new-priming").addEventListener("click", newPriming);
   $("#generate-action-line").addEventListener("click", generateActionLine);

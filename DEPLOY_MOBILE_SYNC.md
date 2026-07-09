@@ -18,11 +18,14 @@ Cloudflare Worker + Static Assets + KV
 
 - `wrangler.toml` 已加入 Cloudflare 要求的 `[assets]` 配置。
 - 新增 `worker.js`，用于处理 `/api/sync/:id`。
+- 新增 LifeLog 的 `AI 整理` 和 Priming 的 `AI 定向` 接口：`/api/extract`、`/api/prime`。
+- 顶部加入 `记录日期 / Record date`，过去漏记的 LifeLog 和 Priming 可以随时回溯补上。
 - 其余请求交给静态资源：`index.html`、`app.js`、`styles.css`、图标、manifest、service worker、历史加密包。
 - 加入中文 / English 切换。
 - 在 `保存 / Keep` 面板中加入 `恢复旧历史 / Restore old history` 按钮。
 - 旧历史口令输入更宽容：大小写、漏掉短横线、中文输入法长横线都会自动规范化。
 - 旧历史口令 `3G5S-XW2R-V6RQ-QVXU` 已本地验证可以解开 `history-v1.enc.json`，可恢复 11 天历史记录。
+- AI 没配置 key 或临时不可用时，App 会继续使用本地整理和本地行动线草稿，不会影响记录。
 
 ## 1. 重新部署当前 Worker
 
@@ -85,6 +88,31 @@ https://your-worker-url/api/sync/your-sync-id
 
 第一次访问一个不存在的 sync id，返回 404 是正常的；这表示接口存在，但云端还没有对应数据。
 
+## 2.1 配置 AI 整理和 Priming 定向
+
+AI 功能需要一个 OpenAI API key。这个 key 不要写进 GitHub，只放在 Cloudflare 的 Secret 里。
+
+1. 在 OpenAI 平台创建一个 API key。
+2. 回到 Cloudflare Dashboard，进入 Worker：`life-log-simple-20260706`。
+3. 打开 `Settings`。
+4. 打开 `Variables and Secrets`。
+5. 添加 Secret，名称必须填：
+
+```text
+OPENAI_API_KEY
+```
+
+6. Value 填你的 OpenAI API key。
+7. 保存后重新 Deploy。
+
+可选变量：
+
+```text
+OPENAI_MODEL=gpt-5.4-mini
+```
+
+不填也可以，代码会默认使用 `gpt-5.4-mini`。如果没有配置 `OPENAI_API_KEY`，`AI 整理` 和 `AI 定向` 会提示缺少配置，并自动使用本地草稿。
+
 ## 3. 第一次打开与恢复旧历史
 
 1. 打开部署后的 Worker URL。
@@ -140,8 +168,18 @@ Sync passphrase: 自己设置一个至少 10 个字符的密语
 4. 如果还不行，在 Cloudflare 重新 Deploy，并确认 `sw.js` 已更新到：
 
 ```text
-vitality-journal-20260708-bilingual-1
+vitality-journal-20260709-prime-backfill
 ```
+
+## 6.1 如何补记过去漏掉的记录
+
+1. 打开 App。
+2. 在顶部 `记录日期 / Record date` 选择过去某一天。
+3. 在 `看见 / Observe` 中补 LifeLog。
+4. 在 `定向 / Orient` 中补当天的 Priming 或行动回看。
+5. 保存后再切回今天。
+
+补记会按所选日期保存，不会覆盖今天的记录。
 
 ## 7. 安全与备份
 

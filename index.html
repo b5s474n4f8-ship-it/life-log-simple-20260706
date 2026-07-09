@@ -10,7 +10,7 @@
   <link rel="icon" href="./icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20260708-bilingual" />
+  <link rel="stylesheet" href="./styles.css?v=20260709-prime-backfill" />
 </head>
 <body>
   <header class="topbar">
@@ -25,6 +25,7 @@
       <button class="mode-tab" type="button" data-mode="corpus" data-i18n="tab_corpus">Corpus</button>
     </nav>
     <div class="top-actions" aria-label="Utilities" data-i18n-aria="utilities">
+      <label class="date-toggle" for="entry-date"><span data-i18n="entry_date">Record date</span><input id="entry-date" type="date" /></label>
       <div class="language-toggle" aria-label="Language" data-i18n-aria="language">
         <button class="lang-button" type="button" data-lang="zh">中文</button>
         <button class="lang-button" type="button" data-lang="en">EN</button>
@@ -64,9 +65,13 @@
         </section>
 
         <section class="panel-block">
-          <div class="panel-heading">
+          <div class="panel-heading extraction-heading">
             <h2 data-i18n="neutral_extraction">Neutral extraction</h2>
-            <button id="extract-button" class="small-button" type="button" data-i18n="refresh">Refresh</button>
+            <div class="panel-actions">
+              <span id="ai-status" class="ai-status" role="status" aria-live="polite">Local draft</span>
+              <button id="ai-extract-button" class="small-button primary-small" type="button" data-i18n="ai_sensemake">AI organize</button>
+              <button id="extract-button" class="small-button" type="button" data-i18n="refresh_local">Local refresh</button>
+            </div>
           </div>
           <p class="protocol-note" data-i18n="protocol_note">The app observes and organizes. It does not diagnose, rate, or label you.</p>
           <div id="extraction-fields" class="extraction-fields"></div>
@@ -88,7 +93,7 @@
           <label class="field-label" for="priming-input" data-i18n="priming_label">Morning or pre-task priming</label>
           <textarea id="priming-input" rows="8" placeholder="Say the thoughts, plans, and possible resistance in your head." data-i18n-placeholder="priming_placeholder" spellcheck="true"></textarea>
           <div class="input-actions">
-            <button id="generate-action-line" class="primary-action" type="button" data-i18n="generate_action_line">Generate action line</button>
+            <button id="generate-action-line" class="primary-action" type="button" data-i18n="ai_generate_action_line">AI orient</button>
             <button id="save-priming" class="secondary-button" type="button" data-i18n="save">Save</button>
           </div>
           <div class="recent-signal-box">
@@ -194,6 +199,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./app.js?v=20260708-fix1" defer></script>
+  <script src="./app.js?v=20260709-prime-backfill" defer></script>
 </body>
 </html>
