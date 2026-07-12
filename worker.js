@@ -7,7 +7,7 @@ const json = (body, init = {}) => new Response(JSON.stringify(body), {
   }
 });
 
-const DEFAULT_MODEL = "gpt-5.4-mini";
+const DEFAULT_MODEL = "gpt-5.6";
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MAX_TRACE_CHARS = 14000;
 const FIELD_LIMITS = {
@@ -83,8 +83,57 @@ function getStore(env) {
   return env.VITALITY_SYNC || env.vitality_sync || null;
 }
 
+class OpenAiRequestError extends Error {
+  constructor(code, message, status = 502) {
+    super(message);
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function getApiKey(env) {
+  return String(env.OPENAI_API_KEY || "").trim();
+}
+
+function getConfiguredModel(env) {
+  return String(env.OPENAI_MODEL || "").trim();
+}
+
 function getModel(env) {
-  return env.OPENAI_MODEL || DEFAULT_MODEL;
+  const configured = getConfiguredModel(env);
+  return configured === "gpt-5.6" || configured === "gpt-5.6-sol" ? configured : DEFAULT_MODEL;
+}
+
+function getKeyIssue(env) {
+  const key = getApiKey(env);
+  if (!key) return { code: "missing_openai_key", error: "Missing OPENAI_API_KEY.", status: 501 };
+  if (/^(OPENAI_MODEL\s*=|gpt-|OPENAI_)/i.test(key)) {
+    return {
+      code: "invalid_openai_key",
+      error: "OPENAI_API_KEY appears to contain a model setting. Put the real sk-... OpenAI API key in OPENAI_API_KEY.",
+      status: 401
+    };
+  }
+  if (!/^sk-[A-Za-z0-9_-]+$/.test(key)) {
+    return { code: "invalid_openai_key", error: "OPENAI_API_KEY must be an OpenAI API key that starts with sk-.", status: 401 };
+  }
+  return null;
+}
+
+function normalizeOpenAiError(status, result) {
+  const message = String(result?.error?.message || "AI request failed.");
+  const type = String(result?.error?.type || "");
+  const code = String(result?.error?.code || "");
+  if (status === 401 || /incorrect api key|invalid api key|authentication|unauthorized/i.test(`${message} ${type} ${code}`)) {
+    return { code: "invalid_openai_key", error: "OPENAI_API_KEY is invalid. Create a fresh OpenAI API key and save it as the Cloudflare Secret value.", status: 401 };
+  }
+  if (/model|does not exist|not found|unsupported/i.test(`${message} ${type} ${code}`)) {
+    return { code: "invalid_openai_model", error: "The configured AI model is not available. This app is set to use gpt-5.6.", status: 400 };
+  }
+  if (status === 429 || /rate limit|quota/i.test(message)) {
+    return { code: "openai_rate_limited", error: "OpenAI rate limit or quota needs attention.", status: 429 };
+  }
+  return { code: "openai_error", error: "OpenAI request failed.", status: status >= 400 ? status : 502 };
 }
 
 function validId(id) {
@@ -179,7 +228,7 @@ async function callOpenAiJson(env, { input, schema, name }) {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${env.OPENAI_API_KEY}`
+      authorization: `Bearer ${getApiKey(env)}`
     },
     body: JSON.stringify({
       model: getModel(env),
@@ -196,8 +245,15 @@ async function callOpenAiJson(env, { input, schema, name }) {
     })
   });
   const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result?.error?.message || "AI request failed.");
-  return JSON.parse(outputTextFromResponse(result));
+  if (!response.ok) {
+    const issue = normalizeOpenAiError(response.status, result);
+    throw new OpenAiRequestError(issue.code, issue.error, issue.status);
+  }
+  try {
+    return JSON.parse(outputTextFromResponse(result));
+  } catch {
+    throw new OpenAiRequestError("openai_bad_response", "AI returned an unexpected response format.", 502);
+  }
 }
 
 function buildPrompt({ date, language, traces }) {
@@ -274,10 +330,15 @@ function buildPrimePrompt({ date, language, raw, recent }) {
 }
 
 async function handleHealth(env) {
+  const keyIssue = getKeyIssue(env);
+  const configuredModel = getConfiguredModel(env);
   return json({
     ok: true,
-    ai_configured: Boolean(env.OPENAI_API_KEY),
+    ai_configured: !keyIssue,
+    ai_key_status: keyIssue ? keyIssue.code : "ok",
     model: getModel(env),
+    configured_model: configuredModel || null,
+    configured_model_used: !configuredModel || configuredModel === getModel(env),
     sync_configured: Boolean(getStore(env))
   });
 }
@@ -285,7 +346,8 @@ async function handleHealth(env) {
 async function handleExtract(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   if (request.method !== "POST") return json({ error: "Method not allowed." }, { status: 405, headers: { allow: "POST, OPTIONS" } });
-  if (!env.OPENAI_API_KEY) return json({ code: "missing_openai_key", error: "Missing OPENAI_API_KEY." }, { status: 501 });
+  const keyIssue = getKeyIssue(env);
+  if (keyIssue) return json({ code: keyIssue.code, error: keyIssue.error }, { status: keyIssue.status });
 
   let payload;
   try {
@@ -317,14 +379,15 @@ async function handleExtract(request, env) {
       }
     });
   } catch (error) {
-    return json({ code: "openai_error", error: error.message || "AI extraction failed." }, { status: 502 });
+    return json({ code: error.code || "openai_error", error: error.message || "AI extraction failed." }, { status: error.status || 502 });
   }
 }
 
 async function handlePrime(request, env) {
   if (request.method === "OPTIONS") return new Response(null, { status: 204 });
   if (request.method !== "POST") return json({ error: "Method not allowed." }, { status: 405, headers: { allow: "POST, OPTIONS" } });
-  if (!env.OPENAI_API_KEY) return json({ code: "missing_openai_key", error: "Missing OPENAI_API_KEY." }, { status: 501 });
+  const keyIssue = getKeyIssue(env);
+  if (keyIssue) return json({ code: keyIssue.code, error: keyIssue.error }, { status: keyIssue.status });
 
   let payload;
   try {
@@ -347,7 +410,7 @@ async function handlePrime(request, env) {
       updated_at: new Date().toISOString()
     });
   } catch (error) {
-    return json({ code: "openai_error", error: error.message || "AI priming failed." }, { status: 502 });
+    return json({ code: error.code || "openai_error", error: error.message || "AI priming failed." }, { status: error.status || 502 });
   }
 }
 

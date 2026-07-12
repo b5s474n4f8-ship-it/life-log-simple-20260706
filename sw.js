@@ -1,9 +1,9 @@
-const CACHE = "vitality-journal-20260709-prime-backfill";
+const CACHE = "vitality-journal-20260712-ai-latest-keyfix";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260709-prime-backfill",
-  "./app.js?v=20260709-prime-backfill",
+  "./styles.css?v=20260712-ai-latest-keyfix",
+  "./app.js?v=20260712-ai-latest-keyfix",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
