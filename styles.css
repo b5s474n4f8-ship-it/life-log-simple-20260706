@@ -403,16 +403,58 @@ textarea:focus, input:focus { border-color: var(--line-strong); outline: 0; }
 .timeline-bar { height: 9px; border-radius: 999px; background: rgba(47, 109, 99, 0.11); overflow: hidden; }
 .timeline-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
 
-.corpus-list { display: grid; gap: 10px; }
-.corpus-item {
-  padding: 13px;
+.corpus-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.corpus-list { display: grid; gap: 12px; }
+.corpus-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 120px)) minmax(0, 1fr);
+  gap: 10px;
+  margin-bottom: 2px;
+}
+.corpus-stat {
+  min-height: 74px;
+  padding: 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.68);
 }
-.corpus-item header { display: flex; justify-content: space-between; gap: 12px; color: var(--soft); font-size: 12px; font-weight: 760; }
-.corpus-item p { margin: 8px 0 0; color: var(--ink); font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
-.corpus-kind { color: var(--violet); }
+.corpus-stat strong { display: block; color: var(--ink); font-size: 22px; line-height: 1.1; word-break: break-word; }
+.corpus-stat span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.corpus-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.64);
+  overflow: hidden;
+}
+.corpus-group summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 14px;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 840;
+  list-style: none;
+}
+.corpus-group summary::-webkit-details-marker { display: none; }
+.corpus-group summary small {
+  min-width: 30px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--accent-soft);
+  font-size: 11px;
+  text-align: center;
+}
+.corpus-stack { display: grid; gap: 1px; border-top: 1px solid var(--line); background: rgba(35, 48, 45, 0.06); }
+.corpus-item { padding: 13px 14px; background: rgba(255, 255, 255, 0.82); }
+.corpus-item header { display: flex; justify-content: space-between; gap: 12px; color: var(--soft); font-size: 11px; font-weight: 780; }
+.corpus-item p { margin: 7px 0 0; color: var(--ink); font-size: 14px; line-height: 1.72; white-space: pre-wrap; }
+.corpus-kind { color: var(--accent); }
+.corpus-raw p { color: #45534f; font-size: 13px; }
 
 .sheet-dialog, .unlock-dialog {
   width: min(600px, calc(100% - 28px));
@@ -542,4 +584,58 @@ input[type="text"]:focus, input[type="password"]:focus { border-color: var(--lin
 }
 @media (max-width: 600px) {
   .date-toggle input[type="date"] { width: 142px; }
+}
+@media (max-width: 600px) {
+  .corpus-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+  .corpus-overview { grid-template-columns: 1fr 1fr; }
+  .corpus-stat.wide { grid-column: 1 / -1; }
+  .corpus-group summary { padding: 0 12px; }
+  .corpus-item { padding: 12px; }
+}
+.bridge-box {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.bridge-copy,
+.manual-import p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.bridge-actions { margin-top: 4px; }
+.bridge-actions .primary-action { color: #fff; }
+.manual-import {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.56);
+}
+.manual-import summary {
+  min-height: 42px;
+  padding: 11px 13px;
+  color: #53635f;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 820;
+}
+.manual-import p { padding: 0 13px 10px; }
+.manual-import textarea {
+  min-height: 124px;
+  border-width: 1px 0;
+  border-radius: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.manual-import .full-width {
+  width: calc(100% - 26px);
+  margin: 12px 13px 13px;
+}
+@media (max-width: 600px) {
+  .bridge-actions { grid-template-columns: 1fr; }
+  .bridge-actions .primary-action { grid-column: auto; }
 }

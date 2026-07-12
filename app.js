@@ -9,6 +9,7 @@ const HISTORY_AAD = new TextEncoder().encode("life-log-history-v1");
 const SYNC_API_BASE = "./api/sync";
 const AI_EXTRACT_API = "./api/extract";
 const AI_PRIME_API = "./api/prime";
+const GPT_BRIDGE_API = "./api/gpt/inbox";
 const SYNC_ITERATIONS = 250000;
 
 const LANGUAGE_KEY = "vitality-journal-language";
@@ -25,7 +26,7 @@ const I18N = {
     save: "Save", recent_signals: "Recent signals", action_line: "Action line", not_generated: "Not generated", generated: "Generated",
     evening_check_label: "Two-minute evening check", outcome_placeholder: "What actually happened today? Did the action line help?", save_check: "Save check",
     lens_title: "Patterns over time", time_range: "Time range", range_7: "7 days", range_30: "30 days", possible_observations: "Possible observations",
-    recording_rhythm: "Recording rhythm", by_date: "by date", corpus_title: "Personal corpus", copy_corpus: "Copy corpus", search_corpus: "Search corpus",
+    recording_rhythm: "Recording rhythm", by_date: "by date", corpus_title: "Personal corpus", copy_corpus: "Copy shown", export_corpus: "Export corpus", search_corpus: "Search corpus",
     corpus_placeholder: "Search original words, questions, body signals, contexts", backup_sync_title: "Backup and sync", close: "Close",
     dialog_copy: "Your journal stays on this device by default. Cloud sync stores only encrypted data.", export_markdown: "Export Markdown", backup_json: "Backup JSON", restore_json: "Restore JSON",
     restore_old_history: "Restore old history", history_help_title: "Old history code", history_help_copy: "Use the old unlock code only for the bundled history package. It is different from cloud Sync ID and Sync passphrase.",
@@ -33,7 +34,7 @@ const I18N = {
     save_settings: "Save settings", sync_now: "Sync now", pull: "Pull", push: "Push", sync_help: "Use the same Sync ID and passphrase on iPhone and computer.",
     unlock_copy: "Enter the old unlock code to restore the bundled encrypted history on this device.", unlock_code: "Unlock code", later: "Later", unlock: "Unlock", unlocking: "Unlocking",
     date_today: "Today", date_history: "History", trace_count: "{count} trace{plural}", empty_traces: "No traces yet. One sentence is enough.", legacy: "Legacy", lifelog: "LifeLog",
-    extract_placeholder: "Observed signals appear here.", old_history_restored: "Old history restored: {days} days merged.", unlock_wrong: "Unlock code is not correct. Use the old history code, not the cloud sync passphrase.", unlock_hint: "Tip: this code is separate from Sync ID and Sync passphrase.", old_history_already: "Old history is already merged. You can restore again if you want to re-check it.", processing_device: "Processing on this device.", secure_unlock_unsupported: "Secure unlock is not supported in this browser.", history_load_failed: "History package could not be loaded.", unlock_failed: "Unlock failed.", saved_locally: "Saved locally: {dates} days, {traces} traces, {primings} primings.", local_only: "Local only", last_sync: "Last sync {time}", enter_sync_id: "Enter a Sync ID.", passphrase_rule: "Use a sync passphrase with at least 10 characters.", voice_unsupported: "Voice capture is not supported here. Use iPhone dictation in the keyboard.", ai_sensemake: "AI organize", refresh_local: "Local refresh", ai_status_local: "Local draft", ai_status_done: "AI organized", ai_status_working: "Organizing...", ai_missing_key: "AI key is not configured. Local draft is still available.", ai_invalid_key: "OpenAI key is invalid. In Cloudflare, OPENAI_API_KEY must be the sk-... key, not the model name. Local draft is still available.", ai_model_error: "The AI model setting needs attention. The app now uses gpt-5.6. Local draft is still available.", ai_rate_limited: "OpenAI quota or rate limit needs attention. Local draft is still available.", ai_unavailable: "AI is unavailable. Local draft is still available.", ai_done_toast: "AI organized the trace. You can edit any field.", ai_empty: "Save one trace before AI organizing.", daily_brief_empty: "No compact observation yet. Save a trace or refresh.", key_points_title: "Key points", signals_title: "Signals", edit_extract_fields: "Edit extraction fields", extraction_method_local: "Local draft", extraction_method_ai: "AI organized", no_recent_signals: "Not enough recent traces yet. This priming will use the current text first.", no_matching_corpus: "No matching corpus item yet.", no_corpus: "No corpus to copy yet.", corpus_copied: "Corpus copied.", clipboard_unavailable: "Clipboard is unavailable. Use export instead.", entry_date: "Record date", backfill_hint: "Backfill any missed day anytime.", ai_generate_action_line: "AI orient", local_action_line: "Local action line", priming_method_ai: "AI oriented", priming_method_local: "Local draft", priming_ai_done_toast: "AI oriented the priming. You can edit any field.", priming_ai_fallback: "AI is unavailable. Local action line is ready.", priming_ai_missing_key: "AI key is not configured. Local action line is ready.", priming_empty: "Write or dictate a short priming first.", date_changed: "Date changed."
+    extract_placeholder: "Observed signals appear here.", old_history_restored: "Old history restored: {days} days merged.", unlock_wrong: "Unlock code is not correct. Use the old history code, not the cloud sync passphrase.", unlock_hint: "Tip: this code is separate from Sync ID and Sync passphrase.", old_history_already: "Old history is already merged. You can restore again if you want to re-check it.", processing_device: "Processing on this device.", secure_unlock_unsupported: "Secure unlock is not supported in this browser.", history_load_failed: "History package could not be loaded.", unlock_failed: "Unlock failed.", saved_locally: "Saved locally: {dates} days, {traces} traces, {primings} primings.", local_only: "Local only", last_sync: "Last sync {time}", enter_sync_id: "Enter a Sync ID.", passphrase_rule: "Use a sync passphrase with at least 10 characters.", voice_unsupported: "Voice capture is not supported here. Use iPhone dictation in the keyboard.", ai_sensemake: "AI organize", refresh_local: "Local refresh", ai_status_local: "Local draft", ai_status_done: "AI organized", ai_status_working: "Organizing...", ai_missing_key: "AI key is not configured. Local draft is still available.", ai_invalid_key: "OpenAI key is invalid. In Cloudflare, OPENAI_API_KEY must be the sk-... key, not the model name. Local draft is still available.", ai_model_error: "The AI model setting needs attention. The app now uses gpt-5.6. Local draft is still available.", ai_rate_limited: "OpenAI quota or rate limit blocked the AI call. Local draft is still available.", ai_unavailable: "AI is unavailable. Local draft is still available.", ai_done_toast: "AI organized the trace. You can edit any field.", ai_empty: "Save one trace before AI organizing.", daily_brief_empty: "No compact observation yet. Save a trace or refresh.", key_points_title: "Key points", signals_title: "Signals", edit_extract_fields: "Edit extraction fields", extraction_method_local: "Local draft", extraction_method_ai: "AI organized", no_recent_signals: "Not enough recent traces yet. This priming will use the current text first.", no_matching_corpus: "No matching corpus item yet.", no_corpus: "No corpus to copy yet.", corpus_copied: "Corpus copied.", clipboard_unavailable: "Clipboard is unavailable. Use export instead.", entry_date: "Record date", backfill_hint: "Backfill any missed day anytime.", ai_generate_action_line: "AI orient", local_action_line: "Local action line", priming_method_ai: "AI oriented", priming_method_local: "Local draft", priming_ai_done_toast: "AI oriented the priming. You can edit any field.", priming_ai_fallback: "AI is unavailable. Local action line is ready.", priming_ai_missing_key: "AI key is not configured. Local action line is ready.", priming_empty: "Write or dictate a short priming first.", date_changed: "Date changed."
   },
   zh: {
     back_today: "回到今天", main_workspace: "主工作区", utilities: "工具", language: "语言",
@@ -47,7 +48,7 @@ const I18N = {
     save: "保存", recent_signals: "近期信号", action_line: "行动线", not_generated: "尚未生成", generated: "已生成",
     evening_check_label: "晚间两分钟回看", outcome_placeholder: "今天实际发生了什么？这条行动线有没有帮助？", save_check: "保存回看",
     lens_title: "看见一段时间里的模式", time_range: "时间范围", range_7: "7 天", range_30: "30 天", possible_observations: "可能的观察",
-    recording_rhythm: "记录节奏", by_date: "按日期", corpus_title: "个人语料库", copy_corpus: "复制语料", search_corpus: "搜索语料",
+    recording_rhythm: "记录节奏", by_date: "按日期", corpus_title: "个人语料库", copy_corpus: "复制当前语料", export_corpus: "导出语料", search_corpus: "搜索语料",
     corpus_placeholder: "搜索原话、问题、身体信号、场景", backup_sync_title: "备份与同步", close: "关闭",
     dialog_copy: "你的记录默认保存在这台设备上。云同步只保存加密后的数据。", export_markdown: "导出 Markdown", backup_json: "备份 JSON", restore_json: "恢复 JSON",
     restore_old_history: "恢复旧历史", history_help_title: "旧历史口令", history_help_copy: "旧历史口令只用于恢复随 App 打包的历史记录；它和云同步的 Sync ID / 同步密语不是一回事。",
@@ -55,9 +56,56 @@ const I18N = {
     save_settings: "保存设置", sync_now: "立即同步", pull: "拉取", push: "推送", sync_help: "手机和电脑使用同一个 Sync ID 与同步密语。",
     unlock_copy: "输入旧历史口令，把随 App 打包的加密历史恢复到这台设备。", unlock_code: "旧历史口令", later: "稍后", unlock: "解锁", unlocking: "解锁中",
     date_today: "今天", date_history: "历史", trace_count: "{count} 条记录", empty_traces: "还没有记录。一句话就够。", legacy: "旧历史", lifelog: "生命力日志",
-    extract_placeholder: "观察到的信号会出现在这里。", old_history_restored: "旧历史已恢复：合并了 {days} 天记录。", unlock_wrong: "口令不正确。这里需要旧历史口令，不是云同步密语。", unlock_hint: "提示：这个口令和 Sync ID / 同步密语是分开的。", old_history_already: "旧历史已经合并过。你仍然可以再次恢复来重新检查。", processing_device: "正在本设备处理。", secure_unlock_unsupported: "这个浏览器不支持安全解锁。", history_load_failed: "无法加载历史包。", unlock_failed: "解锁失败。", saved_locally: "本地已保存：{dates} 天，{traces} 条记录，{primings} 条 Priming。", local_only: "仅本地", last_sync: "上次同步 {time}", enter_sync_id: "请输入 Sync ID。", passphrase_rule: "同步密语至少需要 10 个字符。", voice_unsupported: "这里不支持 App 内语音输入。iPhone 上可以用键盘自带听写。", ai_sensemake: "AI 整理", refresh_local: "本地刷新", ai_status_local: "本地草稿", ai_status_done: "AI 已整理", ai_status_working: "整理中...", ai_missing_key: "还没配置 AI key，已保留本地草稿。", ai_invalid_key: "OpenAI key 填错了：Cloudflare 里的 OPENAI_API_KEY 必须填 sk- 开头的真实 key，不是模型名。已保留本地草稿。", ai_model_error: "AI 模型配置需要更新。App 现在默认使用 gpt-5.6，已保留本地草稿。", ai_rate_limited: "OpenAI 额度或限速需要检查，已保留本地草稿。", ai_unavailable: "AI 暂时不可用，已保留本地草稿。", ai_done_toast: "AI 已整理，可以继续编辑。", ai_empty: "先保存一条记录，再做 AI 整理。", daily_brief_empty: "还没有压缩观察。保存记录或刷新即可生成。", key_points_title: "要点", signals_title: "信号", edit_extract_fields: "编辑抽取字段", extraction_method_local: "本地草稿", extraction_method_ai: "AI 已整理", no_recent_signals: "近期记录还不够。Priming 会先使用当前文字。", no_matching_corpus: "还没有匹配的语料。", no_corpus: "还没有可复制的语料。", corpus_copied: "语料已复制。", clipboard_unavailable: "剪贴板不可用，请使用导出。", entry_date: "记录日期", backfill_hint: "漏记的日子可以随时回溯补上。", ai_generate_action_line: "AI 定向", local_action_line: "本地行动线", priming_method_ai: "AI 已定向", priming_method_local: "本地草稿", priming_ai_done_toast: "AI 已整理 Priming，可以继续编辑。", priming_ai_fallback: "AI 暂时不可用，已生成本地行动线。", priming_ai_missing_key: "还没配置 AI key，已生成本地行动线。", priming_empty: "先写下或口述一小段 Priming。", date_changed: "日期已切换。"
+    extract_placeholder: "观察到的信号会出现在这里。", old_history_restored: "旧历史已恢复：合并了 {days} 天记录。", unlock_wrong: "口令不正确。这里需要旧历史口令，不是云同步密语。", unlock_hint: "提示：这个口令和 Sync ID / 同步密语是分开的。", old_history_already: "旧历史已经合并过。你仍然可以再次恢复来重新检查。", processing_device: "正在本设备处理。", secure_unlock_unsupported: "这个浏览器不支持安全解锁。", history_load_failed: "无法加载历史包。", unlock_failed: "解锁失败。", saved_locally: "本地已保存：{dates} 天，{traces} 条记录，{primings} 条 Priming。", local_only: "仅本地", last_sync: "上次同步 {time}", enter_sync_id: "请输入 Sync ID。", passphrase_rule: "同步密语至少需要 10 个字符。", voice_unsupported: "这里不支持 App 内语音输入。iPhone 上可以用键盘自带听写。", ai_sensemake: "AI 整理", refresh_local: "本地刷新", ai_status_local: "本地草稿", ai_status_done: "AI 已整理", ai_status_working: "整理中...", ai_missing_key: "还没配置 AI key，已保留本地草稿。", ai_invalid_key: "OpenAI key 填错了：Cloudflare 里的 OPENAI_API_KEY 必须填 sk- 开头的真实 key，不是模型名。已保留本地草稿。", ai_model_error: "AI 模型配置需要更新。App 现在默认使用 gpt-5.6，已保留本地草稿。", ai_rate_limited: "OpenAI 额度或限速阻止了 AI 调用，已保留本地草稿。", ai_unavailable: "AI 暂时不可用，已保留本地草稿。", ai_done_toast: "AI 已整理，可以继续编辑。", ai_empty: "先保存一条记录，再做 AI 整理。", daily_brief_empty: "还没有压缩观察。保存记录或刷新即可生成。", key_points_title: "要点", signals_title: "信号", edit_extract_fields: "编辑抽取字段", extraction_method_local: "本地草稿", extraction_method_ai: "AI 已整理", no_recent_signals: "近期记录还不够。Priming 会先使用当前文字。", no_matching_corpus: "还没有匹配的语料。", no_corpus: "还没有可复制的语料。", corpus_copied: "语料已复制。", clipboard_unavailable: "剪贴板不可用，请使用导出。", entry_date: "记录日期", backfill_hint: "漏记的日子可以随时回溯补上。", ai_generate_action_line: "AI 定向", local_action_line: "本地行动线", priming_method_ai: "AI 已定向", priming_method_local: "本地草稿", priming_ai_done_toast: "AI 已整理 Priming，可以继续编辑。", priming_ai_fallback: "AI 暂时不可用，已生成本地行动线。", priming_ai_missing_key: "还没配置 AI key，已生成本地行动线。", priming_empty: "先写下或口述一小段 Priming。", date_changed: "日期已切换。"
   }
 };
+const BRIDGE_TEXT = {
+  en: {
+    title: "ChatGPT Pro Bridge",
+    statusReady: "Ready",
+    statusMissing: "Not connected",
+    copy: "Use ChatGPT Pro for high-quality sensemaking, then pull the organized results back into this journal.",
+    save: "Save bridge",
+    pull: "Pull GPT results",
+    prompt: "Copy GPT prompt",
+    fallback: "Manual import fallback",
+    fallbackCopy: "If Actions are not available, ask ChatGPT to return bridge JSON and paste it here.",
+    importJson: "Import GPT JSON",
+    enterId: "Enter a Bridge ID.",
+    enterToken: "Enter the Bridge token.",
+    saved: "Bridge settings saved on this device.",
+    pulling: "Pulling GPT results...",
+    pulled: "GPT results merged: {count} item(s).",
+    empty: "No GPT results found yet.",
+    failed: "GPT Bridge needs attention.",
+    promptCopied: "Prompt copied for ChatGPT.",
+    imported: "GPT JSON imported: {count} item(s).",
+    badJson: "Could not read the GPT JSON."
+  },
+  zh: {
+    title: "ChatGPT Pro Bridge",
+    statusReady: "已连接",
+    statusMissing: "未连接",
+    copy: "用 ChatGPT Pro 做高质量整理，再把整理结果拉回这个 Journal 保存、查看和导出。",
+    save: "保存桥接",
+    pull: "拉取 GPT 结果",
+    prompt: "复制给 GPT 的提示",
+    fallback: "手动导入兜底",
+    fallbackCopy: "如果 Actions 暂时不可用，让 ChatGPT 返回 bridge JSON，然后粘贴到这里。",
+    importJson: "导入 GPT JSON",
+    enterId: "请输入 Bridge ID。",
+    enterToken: "请输入 Bridge token。",
+    saved: "桥接设置已保存在本设备。",
+    pulling: "正在拉取 GPT 结果...",
+    pulled: "GPT 结果已合并：{count} 条。",
+    empty: "还没有找到 GPT 结果。",
+    failed: "GPT Bridge 需要检查。",
+    promptCopied: "给 ChatGPT 的提示已复制。",
+    imported: "GPT JSON 已导入：{count} 条。",
+    badJson: "无法读取 GPT JSON。"
+  }
+};
+function bt(key, values = {}) { const template = BRIDGE_TEXT[currentLanguage]?.[key] ?? BRIDGE_TEXT.en[key] ?? key; return template.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? ""); }
 function preferredLanguage() { try { return localStorage.getItem(LANGUAGE_KEY) || ((navigator.language || "").toLowerCase().startsWith("zh") ? "zh" : "en"); } catch { return "zh"; } }
 function locale() { return currentLanguage === "zh" ? "zh-CN" : "en-US"; }
 function t(key, values = {}) { const template = I18N[currentLanguage]?.[key] ?? I18N.en[key] ?? key; return template.replace(/\{(\w+)\}/g, (_, name) => values[name] ?? ""); }
@@ -70,6 +118,17 @@ function aiFailureMessage(payload, kind = "extract") {
   return kind === "prime" ? t("priming_ai_fallback") : t("ai_unavailable");
 }
 function labelFor(item) { return currentLanguage === "zh" ? (item.zh || item.label) : item.label; }
+function extractionSourceLabel(method) {
+  if (method === "ai") return t("extraction_method_ai");
+  if (method === "chatgpt") return currentLanguage === "zh" ? "ChatGPT 整理" : "ChatGPT";
+  return currentLanguage === "zh" ? "本地整理" : "Local";
+}
+function actionMethodLabel(method) {
+  if (method === "ai") return t("priming_method_ai");
+  if (method === "chatgpt") return currentLanguage === "zh" ? "ChatGPT 定向" : "ChatGPT";
+  if (method === "local") return t("priming_method_local");
+  return t("generated");
+}
 function applyI18n() { document.documentElement.lang = currentLanguage === "zh" ? "zh-CN" : "en"; document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); }); document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); }); document.querySelectorAll("[data-i18n-aria]").forEach((el) => { el.setAttribute("aria-label", t(el.dataset.i18nAria)); }); document.querySelectorAll("[data-lang]").forEach((button) => button.classList.toggle("active", button.dataset.lang === currentLanguage)); }
 function setLanguage(language) { currentLanguage = language === "en" ? "en" : "zh"; try { localStorage.setItem(LANGUAGE_KEY, currentLanguage); } catch {} if (state?.settings) state.settings.language = currentLanguage; renderAll(); schedulePersist(); }
 function normalizeUnlockCode(value) { const clean = String(value || "").trim().replace(/[－–—]/g, "-").replace(/\s+/g, "").toUpperCase(); const compact = clean.replace(/-/g, ""); return /^[A-Z0-9]{16}$/.test(compact) ? compact.match(/.{1,4}/g).join("-") : clean; }
@@ -558,7 +617,7 @@ function renderOrient() {
   const session = ensureActivePriming();
   $("#priming-input").value = session.raw || "";
   $("#outcome-input").value = session.outcome || "";
-  const method = session.action_method === "ai" ? t("priming_method_ai") : session.action_method === "local" ? t("priming_method_local") : t("generated");
+  const method = actionMethodLabel(session.action_method);
   $("#priming-status").textContent = session.action_line?.mainline ? `${method} · ${formatDateTime(session.updated_at)}` : t("not_generated");
   renderActionFields(session.action_line || emptyActionLine());
   renderRecentSignals();
@@ -630,7 +689,7 @@ function applyActionLine(actionLine, method = "local", updatedAt = new Date().to
   session.updated_at = updatedAt || new Date().toISOString();
   ensureDay(currentDate).metadata.updated_at = session.updated_at;
   renderActionFields(session.action_line);
-  $("#priming-status").textContent = `${method === "ai" ? t("priming_method_ai") : t("priming_method_local")} · ${formatDateTime(session.updated_at)}`;
+  $("#priming-status").textContent = `${actionMethodLabel(method)} · ${formatDateTime(session.updated_at)}`;
   renderLens(); renderCorpus(); schedulePersist();
 }
 function normalizeActionLineFields(actionLine = {}) {
@@ -708,30 +767,134 @@ function renderTimeline(daysBack) {
   $("#timeline").innerHTML = dates.map((date) => { const day = state.days[date]; const count = (day?.traces?.length || 0) + (day?.primings?.length || 0); const width = count ? Math.max(6, Math.round((count / max) * 100)) : 0; return `<div class="timeline-row"><span>${formatDate(date, { month: "numeric", day: "numeric" })}</span><div class="timeline-bar"><span class="timeline-fill" style="width:${width}%"></span></div><span>${count}</span></div>`; }).join("");
 }
 function renderCorpus() {
+  const allItems = buildCorpusItems();
+  const items = filteredCorpusItems(allItems);
+  const groups = groupCorpusItems(items);
+  const query = $("#corpus-search")?.value?.trim() || "";
+  const totalLabel = currentLanguage === "zh" ? "全部语料" : "All corpus";
+  const shownLabel = currentLanguage === "zh" ? "当前显示" : "Shown";
+  const searchLabel = query ? (currentLanguage === "zh" ? `筛选：${query}` : `Filter: ${query}`) : totalLabel;
+  const overview = `
+    <div class="corpus-overview" aria-label="${currentLanguage === "zh" ? "语料概览" : "Corpus overview"}">
+      <div class="corpus-stat"><strong>${allItems.length}</strong><span>${totalLabel}</span></div>
+      <div class="corpus-stat"><strong>${items.length}</strong><span>${shownLabel}</span></div>
+      <div class="corpus-stat wide"><strong>${escapeHtml(searchLabel)}</strong><span>${currentLanguage === "zh" ? "复制和导出会使用当前筛选结果" : "Copy and export use the current filter"}</span></div>
+    </div>`;
+  if (!items.length) {
+    $("#corpus-list").innerHTML = `${overview}<p class="empty-state">${t("no_matching_corpus")}</p>`;
+    return;
+  }
+  $("#corpus-list").innerHTML = overview + groups.map((group) => `
+    <details class="corpus-group" ${group.key === "raw" ? "" : "open"}>
+      <summary><span>${escapeHtml(corpusGroupTitle(group.key))}</span><small>${group.items.length}</small></summary>
+      <div class="corpus-stack">
+        ${group.items.map((item) => `
+          <article class="corpus-item corpus-${escapeHtml(group.key)}">
+            <header><span>${escapeHtml(item.date)} · <span class="corpus-kind">${escapeHtml(item.kind)}</span></span><span>${escapeHtml(item.source)}</span></header>
+            <p>${escapeHtml(item.text)}</p>
+          </article>`).join("")}
+      </div>
+    </details>`).join("");
+}
+function filteredCorpusItems(items = buildCorpusItems()) {
   const query = $("#corpus-search")?.value?.trim().toLowerCase() || "";
-  const items = buildCorpusItems().filter((item) => !query || `${item.text} ${item.kind} ${item.date}`.toLowerCase().includes(query)).slice(0, 80);
-  $("#corpus-list").innerHTML = items.length ? items.map((item) => `<article class="corpus-item"><header><span>${escapeHtml(item.date)} · <span class="corpus-kind">${escapeHtml(item.kind)}</span></span><span>${escapeHtml(item.source)}</span></header><p>${escapeHtml(item.text)}</p></article>`).join("") : `<p class="empty-state">${t("no_matching_corpus")}</p>`;
+  return items.filter((item) => !query || `${item.text} ${item.kind} ${item.source} ${item.date}`.toLowerCase().includes(query));
+}
+function groupCorpusItems(items) {
+  const order = ["observation", "voice", "signal", "action", "raw"];
+  const groups = new Map(order.map((key) => [key, []]));
+  items.forEach((item) => {
+    const key = groups.has(item.group) ? item.group : "raw";
+    groups.get(key).push(item);
+  });
+  return order.map((key) => ({ key, items: groups.get(key) })).filter((group) => group.items.length);
+}
+function corpusGroupTitle(key) {
+  const zh = { observation: "观察摘要", voice: "原话与问题", signal: "信号", action: "行动线", raw: "原始记录" };
+  const en = { observation: "Observations", voice: "Original words and questions", signal: "Signals", action: "Action lines", raw: "Raw records" };
+  return (currentLanguage === "zh" ? zh : en)[key] || key;
 }
 function buildCorpusItems() {
   const items = [];
+  const add = (date, group, kind, source, text) => {
+    const clean = String(text || "").trim();
+    if (clean) items.push({ date, group, kind, source, text: clean });
+  };
   recordedDates().forEach((date) => {
     const day = state.days[date];
-    day.traces.forEach((trace) => items.push({ date, kind: "Raw trace", source: formatDateTime(trace.created_at), text: trace.text }));
     const fields = getExtractionFields(day);
-    (fields.user_phrases || []).forEach((text) => items.push({ date, kind: "Original phrase", source: "Extraction", text }));
-    (fields.questions || []).forEach((text) => items.push({ date, kind: "Question", source: "Extraction", text }));
+    const extractionSource = extractionSourceLabel(day.extraction?.method);
+    (fields.daily_brief || []).forEach((text) => add(date, "observation", currentLanguage === "zh" ? "今日观察" : "Daily brief", extractionSource, text));
+    (fields.key_points || []).forEach((text) => add(date, "observation", currentLanguage === "zh" ? "压缩要点" : "Key point", extractionSource, text));
+    (fields.events || []).forEach((text) => add(date, "observation", currentLanguage === "zh" ? "事件线索" : "Event signal", extractionSource, text));
+    (fields.user_phrases || []).forEach((text) => add(date, "voice", currentLanguage === "zh" ? "原话" : "Original phrase", extractionSource, text));
+    (fields.questions || []).forEach((text) => add(date, "voice", currentLanguage === "zh" ? "问题" : "Question", extractionSource, text));
+    (fields.contexts || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "场景" : "Context", extractionSource, text));
+    (fields.body_signals || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "身体信号" : "Body signal", extractionSource, text));
+    (fields.energy_signal || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "生命力信号" : "Vitality signal", extractionSource, text));
+    (fields.emotion_words || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "情绪词" : "Emotion word", extractionSource, text));
+    (fields.life_giving_moments || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "展开时刻" : "Life-giving moment", extractionSource, text));
+    (fields.draining_moments || []).forEach((text) => add(date, "signal", currentLanguage === "zh" ? "消耗时刻" : "Draining moment", extractionSource, text));
     day.primings.forEach((session) => {
+      if (session.raw?.trim()) add(date, "raw", "Priming", formatDateTime(session.created_at), session.raw);
       const line = session.action_line || {};
-      ACTION_DEFS.forEach((def) => { if (line[def.id]?.trim()) items.push({ date, kind: labelFor(def), source: "Priming", text: line[def.id] }); });
-      if (session.outcome?.trim()) items.push({ date, kind: "Evening check", source: "Outcome", text: session.outcome });
+      ACTION_DEFS.forEach((def) => { if (line[def.id]?.trim()) add(date, "action", labelFor(def), actionMethodLabel(session.action_method), line[def.id]); });
+      if (session.outcome?.trim()) add(date, "action", currentLanguage === "zh" ? "晚间回看" : "Evening check", currentLanguage === "zh" ? "回看" : "Outcome", session.outcome);
     });
+    day.traces.forEach((trace) => add(date, "raw", currentLanguage === "zh" ? "原始记录" : "Raw trace", formatDateTime(trace.created_at), trace.text));
   });
   return items;
 }
-function copyCorpus() {
-  const text = buildCorpusItems().map((item) => `## ${item.date} · ${item.kind}\n${item.text}`).join("\n\n");
+function formatCorpusMarkdown(items = filteredCorpusItems()) {
+  const lines = ["# Vitality Journal Corpus", ""];
+  groupCorpusItems(items).forEach((group) => {
+    lines.push(`## ${corpusGroupTitle(group.key)}`, "");
+    group.items.forEach((item) => {
+      lines.push(`### ${item.date} · ${item.kind}`, `Source: ${item.source}`, "", item.text, "");
+    });
+  });
+  return lines.join("\n").trim();
+}
+async function copyCorpus() {
+  const items = filteredCorpusItems();
+  const text = formatCorpusMarkdown(items);
   if (!text.trim()) { showToast(t("no_corpus")); return; }
-  navigator.clipboard?.writeText(text).then(() => showToast(t("corpus_copied")), () => showToast(t("clipboard_unavailable")));
+  try {
+    await copyText(text);
+    showToast(t("corpus_copied"));
+  } catch {
+    download(`vitality-corpus-${todayKey()}.md`, text, "text/markdown;charset=utf-8");
+    showToast(currentLanguage === "zh" ? "剪贴板被拦截，已改为导出 Markdown。" : "Clipboard was blocked, so Markdown was exported instead.");
+  }
+}
+function exportCorpus() {
+  const text = formatCorpusMarkdown(filteredCorpusItems());
+  if (!text.trim()) { showToast(t("no_corpus")); return; }
+  download(`vitality-corpus-${todayKey()}.md`, text, "text/markdown;charset=utf-8");
+  showToast(currentLanguage === "zh" ? "语料 Markdown 已导出。" : "Corpus Markdown exported.");
+}
+async function copyText(text) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(text); return true; } catch {}
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "0";
+  area.style.left = "0";
+  area.style.width = "1px";
+  area.style.height = "1px";
+  area.style.opacity = "0";
+  area.style.fontSize = "16px";
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+  area.setSelectionRange(0, area.value.length);
+  let ok = false;
+  try { ok = document.execCommand("copy"); } finally { area.remove(); }
+  if (!ok) throw new Error("Clipboard blocked.");
+  return true;
 }
 function getExtractionFields(day) { if (!day.extraction) day.extraction = buildExtraction(day); day.extraction = normalizeExtractionRecord(day.extraction); return day.extraction.fields; }
 function daysInRange(daysBack) { const start = new Date(); start.setDate(start.getDate() - daysBack + 1); start.setHours(0, 0, 0, 0); return recordedDates().map((date) => state.days[date]).filter((day) => dateFromKey(day.date) >= start).sort((a, b) => a.date.localeCompare(b.date)); }
@@ -944,6 +1107,184 @@ async function importBackup(file) {
   } catch (error) { showToast(error.message || "Import failed."); }
   finally { $("#import-file").value = ""; }
 }
+function bridgeSettings() {
+  if (!state.settings) state.settings = {};
+  if (!state.settings.bridge) state.settings.bridge = {};
+  return state.settings.bridge;
+}
+function renderBridgeSettings() {
+  if (!$("#bridge-id")) return;
+  const settings = bridgeSettings();
+  if (document.activeElement !== $("#bridge-id")) $("#bridge-id").value = settings.id || state.settings?.sync?.sync_id || "";
+  if (document.activeElement !== $("#bridge-token")) $("#bridge-token").value = settings.token || "";
+  $("#bridge-title").textContent = bt("title");
+  $(".bridge-copy").textContent = bt("copy");
+  $("#save-bridge-settings").textContent = bt("save");
+  $("#pull-gpt-inbox").textContent = bt("pull");
+  $("#copy-gpt-prompt").textContent = bt("prompt");
+  $(".manual-import summary").textContent = bt("fallback");
+  $(".manual-import p").textContent = bt("fallbackCopy");
+  $("#import-gpt-json").textContent = bt("importJson");
+  $("#bridge-status").textContent = settings.id && settings.token ? bt("statusReady") : bt("statusMissing");
+}
+function saveBridgeSettings() {
+  const id = $("#bridge-id")?.value.trim();
+  const token = $("#bridge-token")?.value.trim();
+  if (!id) { showToast(bt("enterId")); return; }
+  if (!token) { showToast(bt("enterToken")); return; }
+  state.settings.bridge = { id, token };
+  schedulePersist();
+  renderBridgeSettings();
+  showToast(bt("saved"));
+}
+function getBridgeCredentials() {
+  const settings = bridgeSettings();
+  const id = $("#bridge-id")?.value.trim() || settings.id || state.settings?.sync?.sync_id || "";
+  const token = $("#bridge-token")?.value.trim() || settings.token || "";
+  if (!id) throw new Error(bt("enterId"));
+  if (!token) throw new Error(bt("enterToken"));
+  return { id, token };
+}
+function stableBridgeId(record) {
+  if (record?.id) return String(record.id).replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 90);
+  const base = [record?.date, record?.kind || record?.type, record?.raw_text || record?.raw || record?.text || "", record?.action_line?.mainline || record?.extraction?.daily_brief || ""].join("|");
+  let hash = 0;
+  for (let index = 0; index < base.length; index += 1) hash = ((hash << 5) - hash + base.charCodeAt(index)) | 0;
+  return `gpt_${Math.abs(hash).toString(36)}`;
+}
+function normalizeBridgeDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : currentDate; }
+function bridgeRecordsFromPayload(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.records)) return payload.records;
+  if (payload?.record) return [payload.record];
+  return payload && typeof payload === "object" ? [payload] : [];
+}
+function bridgeExtraction(record, now) {
+  const source = record.extraction?.fields ? record.extraction : (record.extraction || record.fields ? { fields: record.extraction?.fields || record.extraction || record.fields } : null);
+  if (!source?.fields) return null;
+  const normalized = normalizeExtractionRecord({
+    updated_at: source.updated_at || record.updated_at || now,
+    method: "chatgpt",
+    language: source.language || record.language || currentLanguage,
+    model: source.model || record.model || "ChatGPT Pro",
+    fields: source.fields
+  });
+  return Object.values(normalized.fields).some((items) => items.length) ? normalized : null;
+}
+function mergeGptBridgeRecords(records) {
+  let merged = 0;
+  bridgeRecordsFromPayload({ records }).forEach((record) => {
+    if (!record || typeof record !== "object") return;
+    const now = new Date().toISOString();
+    const id = stableBridgeId(record);
+    const date = normalizeBridgeDate(record.date);
+    const kind = (record.kind || record.type || "observe").toLowerCase() === "priming" ? "priming" : "observe";
+    const day = ensureDay(date);
+    const raw = String(record.raw_text || record.raw || record.text || "").trim();
+    const updatedAt = record.updated_at || record.created_at || now;
+    if (kind === "priming") {
+      const session = normalizePriming({
+        id: `${id}_priming`,
+        created_at: record.created_at || now,
+        updated_at: updatedAt,
+        raw,
+        action_line: normalizeActionLineFields(record.action_line || record.actionLine || record),
+        action_method: "chatgpt",
+        outcome: record.outcome || ""
+      });
+      mergeById(day.primings, [session]);
+      merged += 1;
+    } else {
+      if (raw) {
+        mergeById(day.traces, [{ id: `${id}_trace`, created_at: record.created_at || now, updated_at: updatedAt, text: raw, tags: Array.isArray(record.tags) ? record.tags.slice(0, 12) : [], source: "chatgpt" }]);
+        merged += 1;
+      }
+      const extraction = bridgeExtraction(record, updatedAt);
+      if (extraction) day.extraction = newerExtraction(day.extraction, extraction) || extraction;
+    }
+    day.metadata.updated_at = now;
+  });
+  return merged;
+}
+async function pullGptInbox() {
+  try {
+    const { id, token } = getBridgeCredentials();
+    state.settings.bridge = { id, token };
+    schedulePersist();
+    $("#bridge-status").textContent = bt("pulling");
+    const response = await fetch(`${GPT_BRIDGE_API}/${encodeURIComponent(id)}`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.error || bt("failed"));
+    const records = bridgeRecordsFromPayload(payload);
+    if (!records.length) { $("#bridge-status").textContent = bt("statusReady"); showToast(bt("empty")); return; }
+    const count = mergeGptBridgeRecords(records);
+    await persistState();
+    renderAll();
+    showToast(bt("pulled", { count }));
+  } catch (error) {
+    $("#bridge-status").textContent = bt("failed");
+    showToast(error.message || bt("failed"));
+  }
+}
+function buildGptBridgePrompt() {
+  savePriming({ quiet: true });
+  const id = $("#bridge-id")?.value.trim() || bridgeSettings().id || state.settings?.sync?.sync_id || "YOUR-BRIDGE-ID";
+  const day = ensureDay(currentDate);
+  const recent = buildRecentSignals(7);
+  const traces = day.traces.map((trace, index) => `Trace ${index + 1} (${formatDateTime(trace.created_at)}):\n${trace.text}`).join("\n\n") || "No saved LifeLog trace yet.";
+  const session = ensureActivePriming();
+  const priming = session.raw?.trim() ? session.raw.trim() : "No priming transcript yet.";
+  return [
+    "You are my Vitality Journal Bridge.",
+    `Bridge ID: ${id}`,
+    `Date: ${currentDate}`,
+    `UI language: ${currentLanguage}`,
+    "",
+    "Please organize the material neutrally. Observe, compress, and connect. Do not diagnose, evaluate, moralize, or label me.",
+    "For LifeLog, keep my raw words but compress the analysis into daily_brief, key_points, contexts, events, body_signals, energy_signal, emotion_words, life_giving_moments, draining_moments, questions, user_phrases.",
+    "For Priming, turn the transcript into: mainline, top_tasks, first_action, possible_resistance, if_resistance, not_today, finish_standard.",
+    "If the Action is available, save the result with saveVitalityJournalItem. If not, return only JSON in this shape: {\"records\":[...]}.",
+    "",
+    "Recent signals:",
+    JSON.stringify(recent, null, 2),
+    "",
+    "LifeLog traces:",
+    traces,
+    "",
+    "Priming transcript:",
+    priming
+  ].join("\n");
+}
+async function copyGptPrompt() {
+  try {
+    await copyText(buildGptBridgePrompt());
+    showToast(bt("promptCopied"));
+  } catch {
+    download(`vitality-gpt-prompt-${currentDate}.txt`, buildGptBridgePrompt(), "text/plain;charset=utf-8");
+    showToast(bt("promptCopied"));
+  }
+}
+function parseGptJsonText(text) {
+  let candidate = String(text || "").trim();
+  const fenced = candidate.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) candidate = fenced[1].trim();
+  const first = candidate.indexOf("{");
+  const last = candidate.lastIndexOf("}");
+  if (first >= 0 && last > first) candidate = candidate.slice(first, last + 1);
+  return JSON.parse(candidate);
+}
+async function importGptJson() {
+  try {
+    const payload = parseGptJsonText($("#gpt-import-json")?.value || "");
+    const count = mergeGptBridgeRecords(bridgeRecordsFromPayload(payload));
+    await persistState();
+    $("#gpt-import-json").value = "";
+    renderAll();
+    showToast(bt("imported", { count }));
+  } catch {
+    showToast(bt("badJson"));
+  }
+}
 function renderStorageSummary() {
   const target = $("#storage-summary");
   if (!target) return;
@@ -1059,7 +1400,8 @@ function bindEvents() {
   document.querySelectorAll(".range-button").forEach((button) => button.addEventListener("click", () => { lensRange = Number(button.dataset.range); document.querySelectorAll(".range-button").forEach((item) => item.classList.toggle("active", item === button)); renderLens(); }));
   $("#corpus-search").addEventListener("input", renderCorpus);
   $("#copy-corpus").addEventListener("click", copyCorpus);
-  $("#export-button").addEventListener("click", () => { renderStorageSummary(); renderSyncSettings(); $("#export-dialog").showModal(); });
+  $("#export-corpus")?.addEventListener("click", exportCorpus);
+  $("#export-button").addEventListener("click", () => { renderStorageSummary(); renderSyncSettings(); renderBridgeSettings(); $("#export-dialog").showModal(); });
   $("#export-markdown").addEventListener("click", markdownExport);
   $("#export-json").addEventListener("click", jsonExport);
   $("#import-file").addEventListener("change", (event) => importBackup(event.target.files[0]));
@@ -1067,6 +1409,10 @@ function bindEvents() {
   $("#sync-now").addEventListener("click", syncNow);
   $("#pull-sync").addEventListener("click", safePullSync);
   $("#push-sync").addEventListener("click", safePushSync);
+  $("#save-bridge-settings")?.addEventListener("click", saveBridgeSettings);
+  $("#pull-gpt-inbox")?.addEventListener("click", pullGptInbox);
+  $("#copy-gpt-prompt")?.addEventListener("click", copyGptPrompt);
+  $("#import-gpt-json")?.addEventListener("click", importGptJson);
   $("#open-unlock").addEventListener("click", openUnlockDialog);
   document.addEventListener("click", (event) => { const close = event.target.closest("[data-close-dialog]"); if (close) close.closest("dialog").close(); });
   $("#unlock-form").addEventListener("submit", handleUnlock);

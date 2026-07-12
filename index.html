@@ -10,7 +10,7 @@
   <link rel="icon" href="./icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20260712-ai-latest-keyfix" />
+  <link rel="stylesheet" href="./styles.css?v=20260712-gpt-bridge" />
 </head>
 <body>
   <header class="topbar">
@@ -143,7 +143,7 @@
           <p class="kicker" data-i18n="tab_corpus">Corpus</p>
           <h1 id="corpus-title" data-i18n="corpus_title">Personal corpus</h1>
         </div>
-        <button id="copy-corpus" class="secondary-button" type="button" data-i18n="copy_corpus">Copy corpus</button>
+        <div class="corpus-actions"><button id="copy-corpus" class="secondary-button" type="button" data-i18n="copy_corpus">Copy shown</button><button id="export-corpus" class="secondary-button" type="button" data-i18n="export_corpus">Export corpus</button></div>
       </div>
       <div class="input-surface compact">
         <label class="sr-only" for="corpus-search" data-i18n="search_corpus">Search corpus</label>
@@ -184,6 +184,25 @@
         </div>
         <p class="storage-summary" id="sync-help" data-i18n="sync_help">Use the same Sync ID and passphrase on iPhone and computer.</p>
       </section>
+      <section class="bridge-box" aria-labelledby="bridge-title">
+        <div class="panel-heading"><h2 id="bridge-title">ChatGPT Pro Bridge</h2><span id="bridge-status">Not connected</span></div>
+        <p class="bridge-copy">Use ChatGPT Pro for high-quality sensemaking, then pull the organized results back into this journal.</p>
+        <label class="field-label" for="bridge-id">Bridge ID</label>
+        <input id="bridge-id" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="for example lily-vitality" />
+        <label class="field-label" for="bridge-token">Bridge token</label>
+        <input id="bridge-token" type="password" autocomplete="current-password" placeholder="Same token used in your Custom GPT Action" />
+        <div class="input-actions bridge-actions">
+          <button id="save-bridge-settings" class="secondary-button" type="button">Save bridge</button>
+          <button id="pull-gpt-inbox" class="primary-action" type="button">Pull GPT results</button>
+          <button id="copy-gpt-prompt" class="secondary-button" type="button">Copy GPT prompt</button>
+        </div>
+        <details class="manual-import">
+          <summary>Manual import fallback</summary>
+          <p>If Actions are not available, ask ChatGPT to return bridge JSON and paste it here.</p>
+          <textarea id="gpt-import-json" rows="5" spellcheck="false" placeholder='{"records":[...]}'></textarea>
+          <button id="import-gpt-json" class="secondary-button full-width" type="button">Import GPT JSON</button>
+        </details>
+      </section>
       <p id="storage-summary" class="storage-summary"></p>
     </div>
   </dialog>
@@ -199,6 +218,6 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./app.js?v=20260712-ai-latest-keyfix" defer></script>
+  <script src="./app.js?v=20260712-gpt-bridge" defer></script>
 </body>
 </html>

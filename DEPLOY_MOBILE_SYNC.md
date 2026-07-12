@@ -169,7 +169,7 @@ Sync passphrase: 自己设置一个至少 10 个字符的密语
 4. 如果还不行，在 Cloudflare 重新 Deploy，并确认 `sw.js` 已更新到：
 
 ```text
-vitality-journal-20260712-ai-latest-keyfix
+vitality-journal-20260712-gpt-bridge
 ```
 
 ## 6.1 如何补记过去漏掉的记录
@@ -194,3 +194,22 @@ vitality-journal-20260712-ai-latest-keyfix
 - Cloudflare Workers Static Assets: https://developers.cloudflare.com/workers/static-assets/
 - Cloudflare Workers Wrangler assets configuration: https://developers.cloudflare.com/workers/wrangler/configuration/#assets
 - Cloudflare Pages Functions Bindings: https://developers.cloudflare.com/pages/functions/bindings/
+## ChatGPT Pro Bridge
+
+如果你不想额外购买 OpenAI API 额度，推荐使用 ChatGPT Pro Bridge：ChatGPT Pro 负责整理，Vitality Journal 负责保存、查看、趋势和导出。
+
+需要额外配置一个 Cloudflare Secret：
+
+```text
+GPT_ACTION_TOKEN
+```
+
+然后按 `CHATGPT_PRO_BRIDGE_SETUP.md` 创建 Custom GPT，并把 `CUSTOM_GPT_INSTRUCTIONS.md` 复制到 GPT Instructions。
+
+部署后可以访问：
+
+```text
+https://你的-worker域名/gpt-action-openapi.json
+```
+
+把该页面的 OpenAPI schema 复制进 GPT Builder 的 Actions。日常使用时，在 ChatGPT 里记录/Priming，回 App 点 `保存 / Keep` -> `拉取 GPT 结果` 即可。

@@ -24,6 +24,7 @@ const FIELD_LIMITS = {
   user_phrases: 5
 };
 const ACTION_FIELDS = ["mainline", "top_tasks", "first_action", "possible_resistance", "if_resistance", "not_today", "finish_standard"];
+const GPT_INBOX_LIMIT = 500;
 
 const EXTRACTION_SCHEMA = {
   type: "object",
@@ -104,6 +105,23 @@ function getModel(env) {
   return configured === "gpt-5.6" || configured === "gpt-5.6-sol" ? configured : DEFAULT_MODEL;
 }
 
+function getBridgeToken(env) {
+  return String(env.GPT_ACTION_TOKEN || env.VITALITY_BRIDGE_TOKEN || "").trim();
+}
+
+function getRequestToken(request) {
+  const auth = request.headers.get("authorization") || "";
+  if (/^Bearer\s+/i.test(auth)) return auth.replace(/^Bearer\s+/i, "").trim();
+  return String(request.headers.get("x-bridge-token") || "").trim();
+}
+
+function getBridgeAuthIssue(request, env) {
+  const expected = getBridgeToken(env);
+  if (!expected) return { code: "missing_bridge_token", error: "Missing GPT_ACTION_TOKEN Cloudflare secret.", status: 501 };
+  if (getRequestToken(request) !== expected) return { code: "invalid_bridge_token", error: "Bridge token is invalid.", status: 401 };
+  return null;
+}
+
 function getKeyIssue(env) {
   const key = getApiKey(env);
   if (!key) return { code: "missing_openai_key", error: "Missing OPENAI_API_KEY.", status: 501 };
@@ -147,8 +165,24 @@ function getSyncId(pathname) {
   return id && !id.includes("/") ? id : null;
 }
 
+function getGptInboxId(pathname) {
+  const prefix = "/api/gpt/inbox/";
+  if (!pathname.startsWith(prefix)) return null;
+  const id = decodeURIComponent(pathname.slice(prefix.length));
+  return id && !id.includes("/") ? id : null;
+}
+
+function gptInboxKey(id) {
+  return `gpt-inbox:${id}`;
+}
+
 function trimText(value, limit = 180) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text.length > limit ? `${text.slice(0, limit).trim()}...` : text;
+}
+
+function trimMultiline(value, limit = MAX_TRACE_CHARS) {
+  const text = String(value || "").replace(/\r\n/g, "\n").trim();
   return text.length > limit ? `${text.slice(0, limit).trim()}...` : text;
 }
 
@@ -339,7 +373,8 @@ async function handleHealth(env) {
     model: getModel(env),
     configured_model: configuredModel || null,
     configured_model_used: !configuredModel || configuredModel === getModel(env),
-    sync_configured: Boolean(getStore(env))
+    sync_configured: Boolean(getStore(env)),
+    bridge_configured: Boolean(getStore(env) && getBridgeToken(env))
   });
 }
 
@@ -414,6 +449,170 @@ async function handlePrime(request, env) {
   }
 }
 
+function normalizeRecordId(id) {
+  const text = String(id || "").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 90);
+  return text || `gpt_${crypto.randomUUID()}`;
+}
+
+function normalizeDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value || "") ? value : new Date().toISOString().slice(0, 10);
+}
+
+function normalizeTags(value) {
+  return normalizeList(value, 12, { keepOriginal: true, maxLength: 36 });
+}
+
+function hasActionContent(actionLine) {
+  return ACTION_FIELDS.some((key) => String(actionLine?.[key] || "").trim());
+}
+
+function sanitizeGptRecord(input, inheritedJournalId = "") {
+  const now = new Date().toISOString();
+  const journalId = String(input?.journal_id || inheritedJournalId || "").trim();
+  if (!validId(journalId)) throw new OpenAiRequestError("invalid_journal_id", "journal_id must use letters, numbers, dash, or underscore.", 400);
+  const language = input?.language === "en" ? "en" : "zh";
+  const kind = String(input?.kind || input?.type || "observe").toLowerCase() === "priming" ? "priming" : "observe";
+  const extractionFields = input?.extraction?.fields || input?.extraction || input?.fields || null;
+  const extraction = extractionFields ? {
+    updated_at: input?.extraction?.updated_at || now,
+    method: "chatgpt",
+    language,
+    model: input?.model || input?.extraction?.model || "ChatGPT Pro",
+    fields: normalizeAiFields(extractionFields, language)
+  } : null;
+  const actionLine = normalizeActionLine(input?.action_line || input?.actionLine || {}, language);
+  return {
+    id: normalizeRecordId(input?.id),
+    journal_id: journalId,
+    kind,
+    date: normalizeDate(input?.date),
+    language,
+    raw_text: trimMultiline(input?.raw_text || input?.raw || input?.text || "", MAX_TRACE_CHARS),
+    tags: normalizeTags(input?.tags),
+    extraction: extraction && Object.values(extraction.fields).some((items) => items.length) ? extraction : null,
+    action_line: hasActionContent(actionLine) ? actionLine : null,
+    outcome: trimMultiline(input?.outcome || "", 4000),
+    created_at: input?.created_at || now,
+    updated_at: now,
+    source: "chatgpt_action"
+  };
+}
+
+function bridgeRecordsFromPayload(payload) {
+  const list = Array.isArray(payload?.records) ? payload.records : [payload];
+  return list.filter((item) => item && typeof item === "object").map((item) => sanitizeGptRecord(item, payload?.journal_id));
+}
+
+async function readInbox(store, id) {
+  return (await store.get(gptInboxKey(id), "json")) || { records: [] };
+}
+
+async function writeInbox(store, id, inbox) {
+  const records = Array.isArray(inbox.records) ? inbox.records.slice(-GPT_INBOX_LIMIT) : [];
+  await store.put(gptInboxKey(id), JSON.stringify({ records, updated_at: new Date().toISOString() }));
+  return records;
+}
+
+async function handleGptInbox(request, env, idFromPath = null) {
+  const store = getStore(env);
+  if (!store) return json({ code: "missing_kv", error: "Missing KV binding VITALITY_SYNC." }, { status: 500 });
+  if (request.method === "OPTIONS") return new Response(null, { status: 204 });
+  const authIssue = getBridgeAuthIssue(request, env);
+  if (authIssue) return json({ code: authIssue.code, error: authIssue.error }, { status: authIssue.status });
+
+  if (request.method === "GET") {
+    const id = idFromPath;
+    if (!validId(id)) return json({ code: "invalid_journal_id", error: "Invalid Bridge ID." }, { status: 400 });
+    const inbox = await readInbox(store, id);
+    return json({ ok: true, records: inbox.records || [], updated_at: inbox.updated_at || null });
+  }
+
+  if (request.method === "POST" && !idFromPath) {
+    let payload;
+    try { payload = await request.json(); } catch { return json({ code: "invalid_json", error: "Invalid JSON." }, { status: 400 }); }
+    let records;
+    try { records = bridgeRecordsFromPayload(payload); } catch (error) { return json({ code: error.code || "invalid_record", error: error.message || "Invalid GPT record." }, { status: error.status || 400 }); }
+    if (!records.length) return json({ code: "empty_records", error: "No records to save." }, { status: 400 });
+    const grouped = new Map();
+    records.forEach((record) => {
+      if (!grouped.has(record.journal_id)) grouped.set(record.journal_id, []);
+      grouped.get(record.journal_id).push(record);
+    });
+    const stored = [];
+    for (const [journalId, items] of grouped.entries()) {
+      const inbox = await readInbox(store, journalId);
+      const byId = new Map((inbox.records || []).map((record) => [record.id, record]));
+      items.forEach((record) => byId.set(record.id, record));
+      const recordsToStore = [...byId.values()].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))).slice(-GPT_INBOX_LIMIT);
+      await writeInbox(store, journalId, { records: recordsToStore });
+      stored.push(...items.map((record) => ({ id: record.id, journal_id: journalId, date: record.date, kind: record.kind })));
+    }
+    return json({ ok: true, stored_count: stored.length, records: stored });
+  }
+
+  return json({ error: "Method not allowed." }, { status: 405, headers: { allow: "GET, POST, OPTIONS" } });
+}
+
+function buildGptActionOpenApi(request) {
+  const origin = new URL(request.url).origin;
+  const extractionProperties = Object.fromEntries(Object.keys(FIELD_LIMITS).map((key) => [key, { type: "array", items: { type: "string" } }]));
+  const actionProperties = Object.fromEntries(ACTION_FIELDS.map((key) => [key, { type: "string" }]));
+  return {
+    openapi: "3.1.0",
+    info: { title: "Vitality Journal Bridge", version: "1.0.0" },
+    servers: [{ url: origin }],
+    paths: {
+      "/api/gpt/inbox": {
+        post: {
+          operationId: "saveVitalityJournalItem",
+          summary: "Save a ChatGPT-organized LifeLog or Priming result into Vitality Journal.",
+          security: [{ BearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["journal_id", "kind", "date"],
+                  properties: {
+                    journal_id: { type: "string", description: "The user's Bridge ID, for example lily-vitality." },
+                    id: { type: "string", description: "A stable unique id. Reuse it if updating the same item." },
+                    kind: { type: "string", enum: ["observe", "priming"] },
+                    date: { type: "string", description: "Record date in YYYY-MM-DD." },
+                    language: { type: "string", enum: ["zh", "en"] },
+                    raw_text: { type: "string", description: "Original user wording. Preserve natural code-switching." },
+                    tags: { type: "array", items: { type: "string" } },
+                    extraction: {
+                      type: "object",
+                      additionalProperties: false,
+                      properties: {
+                        fields: { type: "object", additionalProperties: false, properties: extractionProperties }
+                      }
+                    },
+                    action_line: { type: "object", additionalProperties: false, properties: actionProperties },
+                    outcome: { type: "string" },
+                    model: { type: "string" }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            "200": { description: "Saved." },
+            "401": { description: "Bridge token is invalid." }
+          }
+        }
+      }
+    },
+    components: {
+      securitySchemes: {
+        BearerAuth: { type: "http", scheme: "bearer", description: "Use the GPT_ACTION_TOKEN configured in Cloudflare." }
+      }
+    }
+  };
+}
+
 async function handleSync(request, env, id) {
   const store = getStore(env);
   if (!store) return json({ error: "Missing KV binding VITALITY_SYNC." }, { status: 500 });
@@ -454,8 +653,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return handleHealth(env);
+    if (url.pathname === "/gpt-action-openapi.json" || url.pathname === "/api/gpt/openapi") return json(buildGptActionOpenApi(request));
     if (url.pathname === "/api/extract") return handleExtract(request, env);
     if (url.pathname === "/api/prime") return handlePrime(request, env);
+    if (url.pathname === "/api/gpt/inbox") return handleGptInbox(request, env);
+    const gptInboxId = getGptInboxId(url.pathname);
+    if (gptInboxId) return handleGptInbox(request, env, gptInboxId);
     const syncId = getSyncId(url.pathname);
     if (syncId) return handleSync(request, env, syncId);
     return env.ASSETS.fetch(request);

@@ -1,9 +1,9 @@
-const CACHE = "vitality-journal-20260712-ai-latest-keyfix";
+const CACHE = "vitality-journal-20260712-gpt-bridge";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260712-ai-latest-keyfix",
-  "./app.js?v=20260712-ai-latest-keyfix",
+  "./styles.css?v=20260712-gpt-bridge",
+  "./app.js?v=20260712-gpt-bridge",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
