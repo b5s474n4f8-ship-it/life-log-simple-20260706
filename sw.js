@@ -1,9 +1,9 @@
-const CACHE = "vitality-journal-20260712-gpt-bridge";
+﻿const CACHE = "vitality-journal-20260713-companion-inventory-boundary";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css?v=20260712-gpt-bridge",
-  "./app.js?v=20260712-gpt-bridge",
+  "./styles.css?v=20260712-simple-local",
+  "./app.js?v=20260713-companion-inventory-boundary",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -27,3 +27,9 @@ self.addEventListener("fetch", (event) => {
     return response;
   }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./index.html"))));
 });
+
+
+
+
+
+

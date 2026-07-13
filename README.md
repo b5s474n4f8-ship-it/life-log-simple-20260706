@@ -1,20 +1,40 @@
-# Life Log Simple
+# Vitality Journal
 
-这一版把 Life Log 收束为一件事：持续写下每天发生的事件、想法、感悟、启发、灵感和规划，让它们逐日沉淀为个人语料与编年史。
+A low-friction LifeLog + Priming journal for daily recording, local organization, personal corpus review, export, backup, and encrypted sync.
 
-## 使用方式
+Current mode: Simple Local Organizer.
 
-- 打开默认进入真实今天，跨日后自动翻到新的一页。
-- 第一次点入编辑区时，光标自动落到当天记录末尾。
-- 输入后自动保存，不需要提交按钮。
-- “历史”按日期查看和继续补写。
-- “导出”可生成完整 Markdown 或 JSON 备份。
-- 不包含 AI、分类、复盘、to-dos 或统计面板。
+## What It Does
 
-## 旧数据
+- Observe: save complete LifeLog traces.
+- Orient: turn a priming note into a small editable action line.
+- Lens: view 7-day and 30-day rhythm and repeated signals.
+- Corpus: keep each user input as one complete corpus item, with copy and Markdown export.
+- Keep: export Markdown, backup JSON, restore bundled old history, and use encrypted sync.
 
-App 继续使用 `life-log-v5` 的本地存储，因此同一 GitHub Pages 地址上的旧记录会继续保留。加密历史包仍可通过首次口令恢复，口令不在公开文件中。
+Daily use does not require separate model service setup.
 
-## GitHub Pages
+## Deployment
 
-将本目录根部全部文件上传到仓库根目录。Pages 部署成功后，打开网站并确认 GitHub Actions 中最新的 `pages build and deployment` 为绿色。
+Use the step-by-step guide:
+
+```text
+DEPLOY_MOBILE_SYNC.md
+```
+
+For Cloudflare Workers, keep these files in the repository root:
+
+```text
+index.html
+app.js
+styles.css
+sw.js
+worker.js
+wrangler.toml
+manifest.webmanifest
+icon-192.png
+icon-512.png
+apple-touch-icon.png
+history-v1.enc.json
+.nojekyll
+```

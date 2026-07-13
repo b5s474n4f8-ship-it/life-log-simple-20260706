@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
@@ -10,7 +10,7 @@
   <link rel="icon" href="./icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20260712-gpt-bridge" />
+  <link rel="stylesheet" href="./styles.css?v=20260712-simple-local" />
 </head>
 <body>
   <header class="topbar">
@@ -50,6 +50,7 @@
         <div class="chip-row" id="quick-tags" aria-label="Optional tags" data-i18n-aria="optional_tags"></div>
         <div class="input-actions">
           <button id="save-trace" class="primary-action" type="button" data-i18n="save_trace">Save trace</button>
+          <button id="companion-template" class="secondary-button" type="button" data-i18n="companion_trace">Companion</button>
           <button id="voice-button" class="secondary-button" type="button" data-i18n="voice">Voice</button>
           <button id="clear-trace" class="ghost-button" type="button" data-i18n="clear">Clear</button>
         </div>
@@ -69,7 +70,7 @@
             <h2 data-i18n="neutral_extraction">Neutral extraction</h2>
             <div class="panel-actions">
               <span id="ai-status" class="ai-status" role="status" aria-live="polite">Local draft</span>
-              <button id="ai-extract-button" class="small-button primary-small" type="button" data-i18n="ai_sensemake">AI organize</button>
+              <button id="ai-extract-button" class="small-button primary-small" type="button" data-i18n="ai_sensemake">Organize</button>
               <button id="extract-button" class="small-button" type="button" data-i18n="refresh_local">Local refresh</button>
             </div>
           </div>
@@ -93,12 +94,22 @@
           <label class="field-label" for="priming-input" data-i18n="priming_label">Morning or pre-task priming</label>
           <textarea id="priming-input" rows="8" placeholder="Say the thoughts, plans, and possible resistance in your head." data-i18n-placeholder="priming_placeholder" spellcheck="true"></textarea>
           <div class="input-actions">
-            <button id="generate-action-line" class="primary-action" type="button" data-i18n="ai_generate_action_line">AI orient</button>
+            <button id="generate-action-line" class="primary-action" type="button" data-i18n="ai_generate_action_line">Generate action line</button>
+            <button id="companion-priming" class="secondary-button" type="button" data-i18n="companion_priming">Companion start</button>
+            <button id="companion-today" class="secondary-button" type="button" data-i18n="companion_today">Today experiment</button>
+            <button id="companion-next-step" class="secondary-button" type="button" data-i18n="companion_next_step">Next connection</button>
+            <button id="companion-low-energy" class="secondary-button" type="button" data-i18n="companion_low_energy">Low energy</button>
             <button id="save-priming" class="secondary-button" type="button" data-i18n="save">Save</button>
           </div>
           <div class="recent-signal-box">
             <h2 data-i18n="recent_signals">Recent signals</h2>
             <div id="recent-signals"></div>
+          </div>
+          <div class="recent-signal-box">
+            <h2 data-i18n="companion_inventory">Real entries</h2>
+            <textarea id="companion-inventory" rows="6" placeholder="Write real people, roles, or settings you can choose from." data-i18n-placeholder="companion_inventory_placeholder" spellcheck="true"></textarea>
+            <button id="load-companion-inventory-defaults" class="small-button" type="button" data-i18n="companion_inventory_defaults">Load defaults</button>
+            <p class="protocol-note" data-i18n="companion_inventory_hint">Use real people, roles, or settings. Empty is allowed.</p>
           </div>
         </section>
 
@@ -110,7 +121,9 @@
           <div id="action-fields" class="action-fields"></div>
           <label class="field-label" for="outcome-input" data-i18n="evening_check_label">Two-minute evening check</label>
           <textarea id="outcome-input" rows="4" placeholder="What actually happened today? Did the action line help?" data-i18n-placeholder="outcome_placeholder" spellcheck="true"></textarea>
+          <button id="companion-outcome" class="secondary-button full-width" type="button" data-i18n="companion_outcome">Companion review</button>
           <button id="save-outcome" class="secondary-button full-width" type="button" data-i18n="save_check">Save check</button>
+          <button id="save-companion-outcome-trace" class="secondary-button full-width" type="button" data-i18n="save_companion_outcome_trace">Save as Companion trace</button>
         </section>
       </div>
     </section>
@@ -128,8 +141,20 @@
       </div>
       <div id="lens-summary" class="metric-grid"></div>
       <section class="panel-block">
-        <div class="panel-heading"><h2 data-i18n="possible_observations">Possible observations</h2><span id="lens-days"></span></div>
+        <div class="panel-heading"><h2 data-i18n="companion_evidence">Connection evidence</h2><span id="companion-evidence-window"></span></div>
+        <div id="companion-evidence" class="observation-list"></div>
+      </section>
+      <section class="panel-block">
+        <div class="panel-heading">
+          <div><h2 data-i18n="possible_observations">Possible observations</h2><span id="lens-days"></span></div>
+          <button id="companion-map" class="secondary-button" type="button" data-i18n="companion_map">Companion map</button>
+          <button id="save-companion-map" class="secondary-button" type="button" data-i18n="save_companion_map">Save map</button>
+          <button id="companion-weekly-review" class="secondary-button" type="button" data-i18n="companion_weekly_review">Companion week</button>
+          <button id="save-companion-weekly-review" class="secondary-button" type="button" data-i18n="save_companion_weekly">Save week</button>
+        </div>
         <div id="observations" class="observation-list"></div>
+        <div id="companion-map-output" class="observation-list"></div>
+        <div id="companion-weekly-review-output" class="observation-list"></div>
       </section>
       <section class="panel-block timeline-block">
         <div class="panel-heading"><h2 data-i18n="recording_rhythm">Recording rhythm</h2><span data-i18n="by_date">by date</span></div>
@@ -184,25 +209,6 @@
         </div>
         <p class="storage-summary" id="sync-help" data-i18n="sync_help">Use the same Sync ID and passphrase on iPhone and computer.</p>
       </section>
-      <section class="bridge-box" aria-labelledby="bridge-title">
-        <div class="panel-heading"><h2 id="bridge-title">ChatGPT Pro Bridge</h2><span id="bridge-status">Not connected</span></div>
-        <p class="bridge-copy">Use ChatGPT Pro for high-quality sensemaking, then pull the organized results back into this journal.</p>
-        <label class="field-label" for="bridge-id">Bridge ID</label>
-        <input id="bridge-id" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="for example lily-vitality" />
-        <label class="field-label" for="bridge-token">Bridge token</label>
-        <input id="bridge-token" type="password" autocomplete="current-password" placeholder="Same token used in your Custom GPT Action" />
-        <div class="input-actions bridge-actions">
-          <button id="save-bridge-settings" class="secondary-button" type="button">Save bridge</button>
-          <button id="pull-gpt-inbox" class="primary-action" type="button">Pull GPT results</button>
-          <button id="copy-gpt-prompt" class="secondary-button" type="button">Copy GPT prompt</button>
-        </div>
-        <details class="manual-import">
-          <summary>Manual import fallback</summary>
-          <p>If Actions are not available, ask ChatGPT to return bridge JSON and paste it here.</p>
-          <textarea id="gpt-import-json" rows="5" spellcheck="false" placeholder='{"records":[...]}'></textarea>
-          <button id="import-gpt-json" class="secondary-button full-width" type="button">Import GPT JSON</button>
-        </details>
-      </section>
       <p id="storage-summary" class="storage-summary"></p>
     </div>
   </dialog>
@@ -218,6 +224,19 @@
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <script src="./app.js?v=20260712-gpt-bridge" defer></script>
+  <script src="./app.js?v=20260713-companion-inventory-boundary" defer></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+

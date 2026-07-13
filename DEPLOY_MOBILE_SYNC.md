@@ -1,57 +1,51 @@
-# Vitality Journal 部署与同步指引
+# Vitality Journal Deployment Guide
 
-这份说明按你当前截图里的路径来：Cloudflare 正在把项目作为 **Worker service** 部署，而不是 Pages project。报错内容要求配置静态资源目录，所以本项目现在采用：
+Current mode: Simple Local Organizer.
 
-```text
-Cloudflare Worker + Static Assets + KV
-```
+The app now keeps the daily flow low-maintenance:
 
-静态 App 由 Worker Static Assets 托管；同步接口由 `worker.js` 处理：
+- LifeLog records are saved as complete original entries.
+- The organize button uses local, lightweight extraction for basic structure.
+- Priming generates a local action line without external setup.
+- Corpus keeps one user input as one complete corpus item.
+- Copy, Markdown export, JSON backup, old history restore, and encrypted sync remain available.
 
-```text
-/api/sync/:id
-```
+No separate model service setup is required for daily use.
 
-云端仍然只保存加密后的 JSON envelope，明文日志不会上传到服务器。
+## 1. Upload These Files To GitHub
 
-## 0. 本次修复了什么
-
-- `wrangler.toml` 已加入 Cloudflare 要求的 `[assets]` 配置。
-- 新增 `worker.js`，用于处理 `/api/sync/:id`。
-- 新增 LifeLog 的 `AI 整理` 和 Priming 的 `AI 定向` 接口：`/api/extract`、`/api/prime`。
-- 顶部加入 `记录日期 / Record date`，过去漏记的 LifeLog 和 Priming 可以随时回溯补上。
-- 其余请求交给静态资源：`index.html`、`app.js`、`styles.css`、图标、manifest、service worker、历史加密包。
-- 加入中文 / English 切换。
-- 在 `保存 / Keep` 面板中加入 `恢复旧历史 / Restore old history` 按钮。
-- 旧历史口令输入更宽容：大小写、漏掉短横线、中文输入法长横线都会自动规范化。
-- 旧历史口令 `3G5S-XW2R-V6RQ-QVXU` 已本地验证可以解开 `history-v1.enc.json`，可恢复 11 天历史记录。
-- AI 没配置 key、key 填错、模型变量填错或临时不可用时，App 会继续使用本地整理和本地行动线草稿，不会影响记录。
-- 默认模型已更新为 OpenAI 官方模型页当前推荐的旗舰模型 alias：`gpt-5.6`。
-
-## 1. 重新部署当前 Worker
-
-1. 回到 Cloudflare Dashboard。
-2. 打开你截图里的这个项目：`life-log-simple-20260706`。
-3. 进入 `Deployments`。
-4. 触发一次新的 Deploy。
-5. 等待 build log 重新跑。
-
-这次不应该再出现：
+Update the repository root with the current versions of these files:
 
 ```text
-If you are uploading a directory of assets...
-add the following to your wrangler.toml file:
-[assets]
-directory = "./dist"
+index.html
+app.js
+styles.css
+sw.js
+worker.js
+wrangler.toml
+manifest.webmanifest
+icon-192.png
+icon-512.png
+apple-touch-icon.png
+history-v1.enc.json
+.nojekyll
 ```
 
-因为现在 `wrangler.toml` 已经配置为：
+Optional documentation files can also be uploaded, but they are not required for the app to run.
+
+## 2. Deploy On Cloudflare Workers
+
+1. Open Cloudflare Dashboard.
+2. Go to `Workers & Pages`.
+3. Open the existing project: `life-log-simple-20260706`.
+4. Make sure the project is connected to the GitHub repository.
+5. Trigger a new deploy from the latest GitHub commit.
+6. Wait until the deployment shows success.
+7. Click `Visit` to open the live URL.
+
+The static assets setting is already in `wrangler.toml`:
 
 ```toml
-name = "life-log-simple-20260706"
-main = "./worker.js"
-compatibility_date = "2026-07-08"
-
 [assets]
 directory = "."
 binding = "ASSETS"
@@ -59,157 +53,94 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*"]
 ```
 
-## 2. 绑定 KV，同步手机和电脑
+## 3. Confirm The App Is Updated
 
-同步功能需要 KV。没有 KV 时，App 仍可本地使用，但 `Push / Pull / Sync now` 不会工作。
+Open the deployed site and check:
 
-1. 在 Cloudflare Dashboard 进入你的 Worker：`life-log-simple-20260706`。
-2. 打开 `Settings`。
-3. 打开 `Bindings`。
-4. 添加 KV namespace binding。
-5. 变量名必须填：
+1. The main tabs are `看见 / 定向 / 趋势 / 语料`.
+2. The LifeLog organize area says local draft or local organization.
+3. There is no external model setup panel in `保存 / Keep`.
+4. The `语料` page shows complete record cards, not tiny fragmented fields.
 
-```text
-VITALITY_SYNC
-```
+If the phone still shows the old version:
 
-6. 选择已有 KV namespace，或新建一个，例如：
-
-```text
-vitality_journal_sync
-```
-
-7. 保存后重新 Deploy。
-
-同步接口应可访问：
+1. Close the Home Screen app completely.
+2. Open the deployed URL in Safari and refresh.
+3. If needed, delete the Home Screen icon and add it again.
+4. Confirm `sw.js` contains:
 
 ```text
-https://your-worker-url/api/sync/your-sync-id
+vitality-journal-20260712-simple-local
 ```
 
-第一次访问一个不存在的 sync id，返回 404 是正常的；这表示接口存在，但云端还没有对应数据。
+## 4. Restore Old History
 
-## 2.1 配置 AI 整理和 Priming 定向
-
-AI 功能需要一个 OpenAI API key。这个 key 不要写进 GitHub，只放在 Cloudflare 的 Secret 里。
-
-1. 在 OpenAI 平台创建一个 API key。
-2. 回到 Cloudflare Dashboard，进入 Worker：`life-log-simple-20260706`。
-3. 打开 `Settings`。
-4. 打开 `Variables and Secrets`。
-5. 添加 Secret，名称必须填：
-
-```text
-OPENAI_API_KEY
-```
-
-6. Value 只填你的 OpenAI API key 本身，通常以 `sk-` 开头。不要填 `OPENAI_MODEL=...`，也不要填 `gpt-5.6`。
-7. 保存后重新 Deploy。
-
-模型变量：
-
-```text
-OPENAI_MODEL=gpt-5.6
-```
-
-不填也可以，代码会默认使用 `gpt-5.6`。如果你之前把 `OPENAI_API_KEY` 的 Value 填成了 `OPENAI_MODEL=gpt-5.5` 或类似内容，需要删除后重新添加正确的 `sk-...` key。
-
-## 3. 第一次打开与恢复旧历史
-
-1. 打开部署后的 Worker URL。
-2. 点击右上角 `保存 / Keep`。
-3. 点击 `恢复旧历史 / Restore old history`。
-4. 输入旧历史口令：
+1. Open the deployed app.
+2. Tap `保存 / Keep`.
+3. Tap `恢复旧历史 / Restore old history`.
+4. Enter the old history code:
 
 ```text
 3G5S-XW2R-V6RQ-QVXU
 ```
 
-5. 点击 `解锁 / Unlock`。
-6. 成功后会提示恢复了多少天记录。
+5. Tap `解锁 / Unlock`.
+6. The app should report how many days were merged.
 
-注意：旧历史口令只用于恢复打包在 App 里的 `history-v1.enc.json`。它不是云同步的 Sync ID，也不是同步密语。
+This old history code is only for the bundled encrypted history package. It is not the cloud sync passphrase.
 
-## 4. 设置电脑和手机同步
+## 5. Use Phone And Computer Sync
 
-先在已经有数据的设备上操作。
+Use the same values on both devices.
 
-1. 打开 App。
-2. 点击 `保存 / Keep`。
-3. 在 `加密同步 / Encrypted sync` 里填写：
+1. Open `保存 / Keep`.
+2. In `加密同步 / Encrypted sync`, enter:
 
 ```text
 Sync ID: lily-vitality
-Sync passphrase: 自己设置一个至少 10 个字符的密语
+Sync passphrase: choose your own phrase with at least 10 characters
 ```
 
-4. 点击 `Push / 推送`，把本设备数据加密后推到云端。
-5. 在另一台设备打开同一个部署网址。
-6. 填入完全相同的 Sync ID 和 Sync passphrase。
-7. 点击 `Pull / 拉取`。
-8. 之后两台设备都可以使用 `Sync now / 立即同步`。
+3. On the device that already has data, tap `Push / 推送`.
+4. On the other device, enter the same Sync ID and passphrase.
+5. Tap `Pull / 拉取`.
+6. Later, use `Sync now / 立即同步`.
 
-## 5. 安装到 iPhone 主屏幕
+The sync payload is encrypted in the browser before upload.
 
-1. 在 iPhone 的 Safari 中打开部署后的 HTTPS 地址。
-2. 点击 Safari 底部的分享按钮。
-3. 选择 `Add to Home Screen / 添加到主屏幕`。
-4. 名称可保留 `Vitality Journal`。
-5. 从主屏幕打开。
+## 6. Backfill Missed Days
 
-语音输入建议直接使用 iPhone 键盘自带的听写按钮。Safari 对网页自定义语音按钮支持不稳定。
+1. Use the top `记录日期 / Record date` picker.
+2. Choose the past date.
+3. Add LifeLog or Priming content.
+4. Save.
+5. Return to today when done.
 
-## 6. 更新后手机仍显示旧版本怎么办
+Backfilled entries are stored under the selected date.
 
-按顺序尝试：
+## 7. Copy And Export
 
-1. 在手机 App 中完全退出后重开。
-2. 在 Safari 打开部署网址，刷新一次。
-3. 如果仍旧，删除主屏幕图标，再重新 `Add to Home Screen`。
-4. 如果还不行，在 Cloudflare 重新 Deploy，并确认 `sw.js` 已更新到：
+For corpus:
+
+1. Open `语料 / Corpus`.
+2. Use search if needed.
+3. Tap `Copy shown / 复制当前语料` to copy the visible corpus.
+4. Tap `Export corpus / 导出语料` to download Markdown.
+5. Each card also has its own `Copy` button.
+
+For full backup:
+
+1. Open `保存 / Keep`.
+2. Tap `Export Markdown / 导出 Markdown` for a readable journal export.
+3. Tap `Backup JSON / 备份 JSON` for full restore data.
+
+## 8. Current Daily Flow
 
 ```text
-vitality-journal-20260712-gpt-bridge
+看见：保存完整 LifeLog 记录
+整理：生成本地中性抽取，原文不变
+定向：写/说 Priming，生成可编辑行动线
+趋势：查看 7/30 天节奏和反复信号
+语料：按完整输入查看、复制、导出
+保存：备份、恢复旧历史、加密同步
 ```
-
-## 6.1 如何补记过去漏掉的记录
-
-1. 打开 App。
-2. 在顶部 `记录日期 / Record date` 选择过去某一天。
-3. 在 `看见 / Observe` 中补 LifeLog。
-4. 在 `定向 / Orient` 中补当天的 Priming 或行动回看。
-5. 保存后再切回今天。
-
-补记会按所选日期保存，不会覆盖今天的记录。
-
-## 7. 安全与备份
-
-- 同步密语丢失后，云端加密数据无法解开。
-- 旧历史口令和同步密语是两套东西。
-- 最稳妥的离线备份仍然是：`保存 / Keep > Backup JSON`。
-- 同步是合并逻辑：同一条记录如果在两台设备都编辑过，较新的 `updated_at` 会胜出。
-
-## 8. 官方参考
-
-- Cloudflare Workers Static Assets: https://developers.cloudflare.com/workers/static-assets/
-- Cloudflare Workers Wrangler assets configuration: https://developers.cloudflare.com/workers/wrangler/configuration/#assets
-- Cloudflare Pages Functions Bindings: https://developers.cloudflare.com/pages/functions/bindings/
-## ChatGPT Pro Bridge
-
-如果你不想额外购买 OpenAI API 额度，推荐使用 ChatGPT Pro Bridge：ChatGPT Pro 负责整理，Vitality Journal 负责保存、查看、趋势和导出。
-
-需要额外配置一个 Cloudflare Secret：
-
-```text
-GPT_ACTION_TOKEN
-```
-
-然后按 `CHATGPT_PRO_BRIDGE_SETUP.md` 创建 Custom GPT，并把 `CUSTOM_GPT_INSTRUCTIONS.md` 复制到 GPT Instructions。
-
-部署后可以访问：
-
-```text
-https://你的-worker域名/gpt-action-openapi.json
-```
-
-把该页面的 OpenAPI schema 复制进 GPT Builder 的 Actions。日常使用时，在 ChatGPT 里记录/Priming，回 App 点 `保存 / Keep` -> `拉取 GPT 结果` 即可。
